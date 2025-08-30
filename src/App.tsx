@@ -10,8 +10,8 @@ const AUDIO_CONFIG = {
   MIN_SPEED: 0.5,
   MAX_SPEED: 2.0,
   SPEED_STEP: 0.05,
-  REVERB_IMPULSE_DURATION: 2,
-  REVERB_IMPULSE_DECAY: 2,
+  REVERB_IMPULSE_DURATION: 1,
+  REVERB_IMPULSE_DECAY: 4,
 } as const;
 
 // --- ICONS (Memoized) --- //
@@ -118,6 +118,41 @@ const useFileHandler = () => {
 
   return { fileInputRef, handleFile, openFilePicker };
 };
+
+const useSliderTouchLock = () => {
+  const onPointerDown = useCallback(() => {
+    document.body.classList.add('overflow-hidden');
+    const onPointerUp = () => {
+      document.body.classList.remove('overflow-hidden');
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }, []);
+  return onPointerDown;
+};
+
+function useThrottledCallback<A extends any[]>(
+  callback: (...args: A) => void,
+  delay: number
+) {
+  const callbackRef = useRef(callback);
+  const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  return useCallback((...args: A) => {
+    if (!throttleRef.current) {
+      callbackRef.current(...args);
+      throttleRef.current = setTimeout(() => {
+        throttleRef.current = null;
+      }, delay);
+    }
+  }, [delay]);
+}
 
 const useAudioPlayer = (audioFile: File | null) => {
   const [state, dispatch] = useReducer(audioReducer, {
@@ -444,6 +479,7 @@ const Slider = memo<{
   step: number;
   unit: string;
 }>(({ label, value, onChange, min, max, step, unit }) => {
+  const onPointerDown = useSliderTouchLock();
   const percentage = ((value - min) / (max - min)) * 100;
   const displayValue = label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(label === 'Speed' ? 1 : 0);
 
@@ -459,6 +495,7 @@ const Slider = memo<{
         max={max}
         step={step}
         value={value}
+        onPointerDown={onPointerDown}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer slider-thumb"
         style={{ background: `linear-gradient(to right, #d946ef ${percentage}%, rgb(203 213 225) ${percentage}%)` }}
@@ -524,8 +561,10 @@ const EditorPage: React.FC<{
 }> = ({ track, audioFile, theme, setTheme, onFileSelect }) => {
   const [isRendering, setIsRendering] = useState(false);
   const { fileInputRef, handleFile } = useFileHandler();
+  const onSeekPointerDown = useSliderTouchLock();
   
   const player = useAudioPlayer(audioFile);
+  const throttledSetSpeed = useThrottledCallback(player.setSpeed, 50); // 50ms throttle
 
   const handleDownload = useCallback(async () => {
     setIsRendering(true);
@@ -575,6 +614,7 @@ const EditorPage: React.FC<{
               max="100"
               step="0.1"
               value={player.progress}
+              onPointerDown={onSeekPointerDown}
               onChange={(e) => player.seek(Number(e.target.value))}
               className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer slider-thumb"
               style={progressBarStyle}
@@ -600,7 +640,7 @@ const EditorPage: React.FC<{
             <Slider label="Reverb" value={player.reverb} onChange={player.setReverb} 
               min={0} max={100} step={5} unit="%" />
             <Slider label="Volume" value={player.volume} onChange={player.setVolume} 
-              min={0} max={100} step={1} unit="%" />
+              min={0} max={200} step={1} unit="%" />
           </div>
         </section>
       </main>
@@ -654,6 +694,33 @@ export default function App() {
       name: file.name.replace(/\.[^/.]+$/, ""),
       artist: 'Unknown Artist',
       coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
+    });
+
+    (window as any).jsmediatags.read(file, {
+      onSuccess: (tag: any) => {
+        let coverUrl = `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`;
+        if (tag.tags.picture) {
+          const { data, format } = tag.tags.picture;
+          let base64String = "";
+          for (let i = 0; i < data.length; i++) {
+            base64String += String.fromCharCode(data[i]);
+          }
+          coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
+        }
+        setTrack({
+          name: tag.tags.title || file.name.replace(/\.[^/.]+$/, ""),
+          artist: tag.tags.artist || 'Unknown Artist',
+          coverUrl: coverUrl
+        });
+      },
+      onError: (error: any) => {
+        console.error("Could not read audio tags, using fallback.", error);
+        setTrack({
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          artist: 'Unknown Artist',
+          coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
+        });
+      }
     });
   }, []);
 
