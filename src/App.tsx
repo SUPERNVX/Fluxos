@@ -7,11 +7,14 @@ const AUDIO_CONFIG = {
   DEFAULT_SPEED: 1.0,
   DEFAULT_REVERB: 0,
   DEFAULT_VOLUME: 100,
+  DEFAULT_BASS: 0,
   MIN_SPEED: 0.5,
   MAX_SPEED: 2.0,
   SPEED_STEP: 0.05,
   REVERB_IMPULSE_DURATION: 1,
   REVERB_IMPULSE_DECAY: 4,
+  BASS_BOOST_FREQUENCY: 250, // Hz
+  BASS_BOOST_MAX_GAIN: 20, // dB
 } as const;
 
 // --- ICONS (Memoized) --- //
@@ -74,6 +77,7 @@ type AudioState = {
   speed: number;
   reverb: number;
   volume: number;
+  bass: number;
 };
 
 type AudioAction = 
@@ -84,6 +88,7 @@ type AudioAction =
   | { type: 'SET_SPEED'; value: number }
   | { type: 'SET_REVERB'; value: number }
   | { type: 'SET_VOLUME'; value: number }
+  | { type: 'SET_BASS'; value: number }
   | { type: 'RESET' };
 
 const audioReducer = (state: AudioState, action: AudioAction): AudioState => {
@@ -95,10 +100,13 @@ const audioReducer = (state: AudioState, action: AudioAction): AudioState => {
     case 'SET_SPEED': return { ...state, speed: action.value };
     case 'SET_REVERB': return { ...state, reverb: action.value };
     case 'SET_VOLUME': return { ...state, volume: action.value };
+    case 'SET_BASS': return { ...state, bass: action.value };
     case 'RESET': return {
       isPlaying: false, progress: 0, currentTime: 0, duration: 0,
-      speed: AUDIO_CONFIG.DEFAULT_SPEED, reverb: AUDIO_CONFIG.DEFAULT_REVERB, 
-      volume: AUDIO_CONFIG.DEFAULT_VOLUME
+      speed: AUDIO_CONFIG.DEFAULT_SPEED, 
+      reverb: AUDIO_CONFIG.DEFAULT_REVERB, 
+      volume: AUDIO_CONFIG.DEFAULT_VOLUME,
+      bass: AUDIO_CONFIG.DEFAULT_BASS,
     };
     default: return state;
   }
@@ -163,6 +171,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     speed: AUDIO_CONFIG.DEFAULT_SPEED,
     reverb: AUDIO_CONFIG.DEFAULT_REVERB,
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
+    bass: AUDIO_CONFIG.DEFAULT_BASS,
   });
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() => 
@@ -177,6 +186,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     wetGain?: GainNode;
     dryGain?: GainNode;
     mainGain?: GainNode;
+    bassBoost?: BiquadFilterNode;
   }>({});
   const timeRef = useRef({ start: 0, pause: 0 });
 
@@ -233,15 +243,21 @@ const useAudioPlayer = (audioFile: File | null) => {
     wetGain.gain.value = wetValue;
     dryGain.gain.value = 1 - wetValue;
 
+    const bassBoost = ctx.createBiquadFilter();
+    bassBoost.type = 'lowshelf';
+    bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
+    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
+
     source.connect(dryGain);
     source.connect(wetGain);
     wetGain.connect(convolver);
     dryGain.connect(mainGain);
     convolver.connect(mainGain);
-    mainGain.connect(ctx.destination);
+    mainGain.connect(bassBoost);
+    bassBoost.connect(ctx.destination);
 
-    nodesRef.current = { convolver, wetGain, dryGain, mainGain };
-  }, [state.speed, state.reverb, state.volume, createImpulseResponse]);
+    nodesRef.current = { convolver, wetGain, dryGain, mainGain, bassBoost };
+  }, [state.speed, state.reverb, state.volume, state.bass, createImpulseResponse]);
 
   const play = useCallback(() => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
@@ -319,12 +335,18 @@ const useAudioPlayer = (audioFile: File | null) => {
       wetGain.gain.value = wetValue;
       dryGain.gain.value = 1 - wetValue;
 
+      const bassBoost = offlineCtx.createBiquadFilter();
+      bassBoost.type = 'lowshelf';
+      bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
+      bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
+
       source.connect(dryGain);
       source.connect(wetGain);
       wetGain.connect(convolver);
       dryGain.connect(mainGain);
       convolver.connect(mainGain);
-      mainGain.connect(offlineCtx.destination);
+      mainGain.connect(bassBoost);
+      bassBoost.connect(offlineCtx.destination);
 
       source.start(0);
 
@@ -344,7 +366,7 @@ const useAudioPlayer = (audioFile: File | null) => {
       console.error("Error rendering audio:", error);
       return false;
     }
-  }, [state.speed, state.reverb, state.volume, createImpulseResponse]);
+  }, [state.speed, state.reverb, state.volume, state.bass, createImpulseResponse]);
 
   // Load audio file
   useEffect(() => {
@@ -415,6 +437,12 @@ const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [state.volume]);
 
+  useEffect(() => {
+    if (nodesRef.current.bassBoost && audioContextRef.current) {
+      nodesRef.current.bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, audioContextRef.current.currentTime);
+    }
+  }, [state.bass]);
+
   return {
     ...state,
     visualizerData,
@@ -424,6 +452,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     setSpeed: (value: number) => dispatch({ type: 'SET_SPEED', value }),
     setReverb: (value: number) => dispatch({ type: 'SET_REVERB', value }),
     setVolume: (value: number) => dispatch({ type: 'SET_VOLUME', value }),
+    setBass: (value: number) => dispatch({ type: 'SET_BASS', value }),
   };
 };
 
@@ -564,7 +593,7 @@ const EditorPage: React.FC<{
   const onSeekPointerDown = useSliderTouchLock();
   
   const player = useAudioPlayer(audioFile);
-  const throttledSetSpeed = useThrottledCallback(player.setSpeed, 50); // 50ms throttle
+  const throttledSetSpeed = useThrottledCallback(player.setSpeed, 50);
 
   const handleDownload = useCallback(async () => {
     setIsRendering(true);
@@ -635,12 +664,14 @@ const EditorPage: React.FC<{
         <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
           <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">Audio Effects</h3>
           <div className="space-y-6">
-            <Slider label="Speed" value={player.speed} onChange={player.setSpeed} 
+            <Slider label="Speed" value={player.speed} onChange={throttledSetSpeed} 
               min={AUDIO_CONFIG.MIN_SPEED} max={AUDIO_CONFIG.MAX_SPEED} step={AUDIO_CONFIG.SPEED_STEP} unit="x" />
             <Slider label="Reverb" value={player.reverb} onChange={player.setReverb} 
               min={0} max={100} step={5} unit="%" />
             <Slider label="Volume" value={player.volume} onChange={player.setVolume} 
               min={0} max={200} step={1} unit="%" />
+            <Slider label="Bass Boost" value={player.bass} onChange={player.setBass} 
+              min={0} max={100} step={1} unit="%" />
           </div>
         </section>
       </main>
