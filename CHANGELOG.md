@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-08-31
+
+### Improved
+
+- **Instant Spatial Audio Updates**: Both 7.1 surround sound and 8D audio effects now update instantly without requiring the user to pause and resume playback.
+- **7.1 Surround Reset Button**: Added a reset button to the 7.1 surround sound controls dropdown to quickly restore default channel positions.
+
+## [1.5.0] - 2025-08-31
+
+### Added
+
+- **Advanced 7.1 Surround Sound**: Enhanced the 7.1 surround sound implementation with additional features:
+  - **HRTF Filters**: Applied pre-loaded HRTF filters to each simulated channel (7 channels plus subwoofer) for more realistic spatial audio.
+  - **Customizable Channel Positions**: Added user controls to adjust the angle and elevation of each of the 8 surround channels, allowing for personalized spatial audio experiences.
+  - **Improved Audio Routing**: Implemented better audio distribution across all channels with gain controls for balanced spatial experience.
+
+## [1.4.2] - 2025-08-31
+
+### Improved
+
+- **7.1 Surround Sound Distribution**: Enhanced the 7.1 surround sound implementation to better utilize the full left and right spatial spectrum.
+  - **Wider Channel Distribution**: Redesigned speaker positions to create a more expansive soundstage with better left-right separation.
+  - **Balanced Audio Routing**: Implemented improved audio routing that distributes left and right channels to appropriate speakers with gain control for balanced spatial experience.
+  - **Enhanced Immersion**: Added gain controls for different speaker groups (front, side, rear) to create a more immersive and enveloping surround sound experience.
+
+## [1.4.1] - 2025-08-31
+
+### Fixed
+
+- **Spatial Audio Effects**: Fixed the implementation of both 7.1 surround sound and 8D audio effects to ensure they work correctly.
+  - **7.1 Surround Sound**: Now properly emulates surround sound using ChannelSplitterNode, ChannelMergerNode, and multiple PannerNode elements positioned in a virtual 3D space.
+  - **8D Audio**: Now correctly rotates audio around the listener's head with both automatic and manual positioning modes.
+- **Audio Graph Connections**: Improved the audio node connection logic to ensure spatial effects are properly applied to the audio signal.
+
+## [1.4.0] - 2025-08-31
+
+### Added
+
+- **7.1 Surround Sound**: Added 7.1 surround sound emulation using Web Audio API PannerNode and HRTF for immersive audio experience.
+- **8D Audio Effect**: Added 8D audio effect with two modes:
+  - **Auto Rotation**: Audio automatically rotates around the listener's head.
+  - **Manual Control**: User can manually control the audio position with a slider.
+- **Spatial Audio Controls**: Added toggle switches for 7.1 surround sound and 8D audio effects below the audio effects section.
+
 ## [1.3.5] - 2025-08-31
 
 ### Fixed

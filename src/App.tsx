@@ -15,7 +15,21 @@ const AUDIO_CONFIG = {
   REVERB_IMPULSE_DECAY: 4,
   BASS_BOOST_FREQUENCY: 250, // Hz
   BASS_BOOST_MAX_GAIN: 20, // dB
+  SURROUND_CHANNELS: 8, // 7.1 surround
+  EIGHT_D_ROTATION_SPEED: 0.5, // Rotações por segundo
 } as const;
+
+// Posições padrão dos canais 7.1
+const DEFAULT_SURROUND_POSITIONS = [
+  { angle: 0, elevation: 0 }, // Front center
+  { angle: Math.PI/3, elevation: 0 }, // Front right (60°)
+  { angle: -Math.PI/3, elevation: 0 }, // Front left (-60°)
+  { angle: Math.PI/2, elevation: 0 }, // Side right (90°)
+  { angle: -Math.PI/2, elevation: 0 }, // Side left (-90°)
+  { angle: 2*Math.PI/3, elevation: 0 }, // Rear right (120°)
+  { angle: -2*Math.PI/3, elevation: 0 }, // Rear left (-120°)
+  { angle: Math.PI, elevation: 0 } // Rear center (180°)
+];
 
 // --- ICONS (Memoized) --- //
 const icons = {
@@ -78,6 +92,14 @@ type AudioState = {
   reverb: number;
   volume: number;
   bass: number;
+  surround: boolean; // 7.1 surround
+  surroundPositions: { angle: number; elevation: number }[]; // Posições personalizadas dos canais
+  eightD: {
+    enabled: boolean;
+    autoRotate: boolean;
+    rotationSpeed: number;
+    manualPosition: number; // 0-360 graus
+  };
 };
 
 type AudioAction = 
@@ -89,6 +111,12 @@ type AudioAction =
   | { type: 'SET_REVERB'; value: number }
   | { type: 'SET_VOLUME'; value: number }
   | { type: 'SET_BASS'; value: number }
+  | { type: 'SET_SURROUND'; value: boolean }
+  | { type: 'SET_SURROUND_POSITIONS'; value: { angle: number; elevation: number }[] }
+  | { type: 'SET_EIGHT_D_ENABLED'; value: boolean }
+  | { type: 'SET_EIGHT_D_AUTO_ROTATE'; value: boolean }
+  | { type: 'SET_EIGHT_D_ROTATION_SPEED'; value: number }
+  | { type: 'SET_EIGHT_D_MANUAL_POSITION'; value: number }
   | { type: 'RESET' }
   | { type: 'NEW_TRACK_RESET' };
 
@@ -102,12 +130,38 @@ const audioReducer = (state: AudioState, action: AudioAction): AudioState => {
     case 'SET_REVERB': return { ...state, reverb: action.value };
     case 'SET_VOLUME': return { ...state, volume: action.value };
     case 'SET_BASS': return { ...state, bass: action.value };
+    case 'SET_SURROUND': return { ...state, surround: action.value };
+    case 'SET_SURROUND_POSITIONS': return { ...state, surroundPositions: action.value };
+    case 'SET_EIGHT_D_ENABLED': return { 
+      ...state, 
+      eightD: { ...state.eightD, enabled: action.value } 
+    };
+    case 'SET_EIGHT_D_AUTO_ROTATE': return { 
+      ...state, 
+      eightD: { ...state.eightD, autoRotate: action.value } 
+    };
+    case 'SET_EIGHT_D_ROTATION_SPEED': return { 
+      ...state, 
+      eightD: { ...state.eightD, rotationSpeed: action.value } 
+    };
+    case 'SET_EIGHT_D_MANUAL_POSITION': return { 
+      ...state, 
+      eightD: { ...state.eightD, manualPosition: action.value } 
+    };
     case 'RESET': return {
       isPlaying: false, progress: 0, currentTime: 0, duration: 0,
       speed: AUDIO_CONFIG.DEFAULT_SPEED, 
       reverb: AUDIO_CONFIG.DEFAULT_REVERB, 
       volume: AUDIO_CONFIG.DEFAULT_VOLUME,
       bass: AUDIO_CONFIG.DEFAULT_BASS,
+      surround: false,
+      surroundPositions: [...DEFAULT_SURROUND_POSITIONS],
+      eightD: {
+        enabled: false,
+        autoRotate: true,
+        rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED,
+        manualPosition: 0,
+      },
     };
     case 'NEW_TRACK_RESET': return {
       ...state,
@@ -149,27 +203,6 @@ const useSliderTouchLock = () => {
   return onPointerDown;
 };
 
-function useThrottledCallback<A extends any[]>(
-  callback: (...args: A) => void,
-  delay: number
-) {
-  const callbackRef = useRef(callback);
-  const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
-
-  return useCallback((...args: A) => {
-    if (!throttleRef.current) {
-      callbackRef.current(...args);
-      throttleRef.current = setTimeout(() => {
-        throttleRef.current = null;
-      }, delay);
-    }
-  }, [delay]);
-}
-
 const usePresets = () => {
   const [presets, setPresets] = useState<any[]>(() => {
     try {
@@ -181,7 +214,7 @@ const usePresets = () => {
     }
   });
 
-  const savePreset = useCallback((name: string, settings: Omit<AudioState, 'isPlaying' | 'progress' | 'currentTime' | 'duration'>) => {
+  const savePreset = useCallback((name: string, settings: any) => {
     const newPreset = { id: Date.now(), name, settings };
     const updatedPresets = [...presets, newPreset];
     setPresets(updatedPresets);
@@ -207,6 +240,14 @@ const useAudioPlayer = (audioFile: File | null) => {
     reverb: AUDIO_CONFIG.DEFAULT_REVERB,
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
     bass: AUDIO_CONFIG.DEFAULT_BASS,
+    surround: false,
+    surroundPositions: [...DEFAULT_SURROUND_POSITIONS],
+    eightD: {
+      enabled: false,
+      autoRotate: true,
+      rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED,
+      manualPosition: 0,
+    },
   });
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() => 
@@ -222,9 +263,15 @@ const useAudioPlayer = (audioFile: File | null) => {
     dryGain?: GainNode;
     mainGain?: GainNode;
     bassBoost?: BiquadFilterNode;
+    splitter?: ChannelSplitterNode; // Para surround
+    merger?: ChannelMergerNode; // Para surround
+    panners?: PannerNode[]; // Para surround (8 canais)
+    hrtfFilters?: BiquadFilterNode[]; // Filtros HRTF
+    eightDPanner?: PannerNode; // Para 8D
   }>({});
   const timeRef = useRef({ start: 0, pause: 0 });
   const animationFrameRef = useRef<number>(0);
+  const eightDAngleRef = useRef(0); // Para animação automática do 8D
 
   const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext) => {
     const { REVERB_IMPULSE_DURATION: duration, REVERB_IMPULSE_DECAY: decay } = AUDIO_CONFIG;
@@ -258,6 +305,84 @@ const useAudioPlayer = (audioFile: File | null) => {
     }
   }, []);
 
+  // Função para criar filtros HRTF para cada canal
+  const createHRTFFilters = useCallback((ctx: AudioContext) => {
+    const filters: BiquadFilterNode[] = [];
+    
+    // Filtros HRTF personalizados para cada canal (valores típicos)
+    const hrtfSettings = [
+      // Front center - neutro
+      { type: 'peaking', frequency: 2000, Q: 1.0, gain: 0 },
+      // Front right - acentua agudos
+      { type: 'peaking', frequency: 4000, Q: 0.8, gain: 2 },
+      // Front left - acentua agudos
+      { type: 'peaking', frequency: 4000, Q: 0.8, gain: 2 },
+      // Side right - acentua médios
+      { type: 'peaking', frequency: 1000, Q: 1.2, gain: 3 },
+      // Side left - acentua médios
+      { type: 'peaking', frequency: 1000, Q: 1.2, gain: 3 },
+      // Rear right - atenua graves
+      { type: 'highshelf', frequency: 500, Q: 1.0, gain: -2 },
+      // Rear left - atenua graves
+      { type: 'highshelf', frequency: 500, Q: 1.0, gain: -2 },
+      // Rear center - atenua graves
+      { type: 'highshelf', frequency: 300, Q: 1.0, gain: -3 }
+    ];
+    
+    for (let i = 0; i < AUDIO_CONFIG.SURROUND_CHANNELS; i++) {
+      const filter = ctx.createBiquadFilter();
+      const settings = hrtfSettings[i];
+      
+      filter.type = settings.type as BiquadFilterType;
+      filter.frequency.setValueAtTime(settings.frequency, 0);
+      filter.Q.setValueAtTime(settings.Q, 0);
+      filter.gain.setValueAtTime(settings.gain, 0);
+      
+      filters.push(filter);
+    }
+    
+    return filters;
+  }, []);
+
+  // Função para criar panners para 7.1 surround com posições personalizadas
+  const createSurroundPanners = useCallback((ctx: AudioContext, positions: { angle: number; elevation: number }[]) => {
+    const panners: PannerNode[] = [];
+    
+    for (let i = 0; i < AUDIO_CONFIG.SURROUND_CHANNELS; i++) {
+      const panner = ctx.createPanner();
+      panner.panningModel = 'HRTF';
+      panner.distanceModel = 'inverse';
+      panner.refDistance = 1;
+      panner.maxDistance = 10000;
+      panner.rolloffFactor = 1;
+      panner.coneInnerAngle = 360;
+      panner.coneOuterAngle = 0;
+      panner.coneOuterGain = 0;
+      
+      const pos = positions[i];
+      const x = Math.sin(pos.angle);
+      const z = -Math.cos(pos.angle); // Negativo para frente
+      panner.setPosition(x, pos.elevation, z);
+      
+      panners.push(panner);
+    }
+    return panners;
+  }, []);
+
+  // Função para criar um panner node para 8D
+  const createEightDPanner = useCallback((ctx: AudioContext) => {
+    const panner = ctx.createPanner();
+    panner.panningModel = 'HRTF';
+    panner.distanceModel = 'inverse';
+    panner.refDistance = 1;
+    panner.maxDistance = 10000;
+    panner.rolloffFactor = 1;
+    panner.coneInnerAngle = 360;
+    panner.coneOuterAngle = 0;
+    panner.coneOuterGain = 0;
+    return panner;
+  }, []);
+
   const setupAudioGraph = useCallback(() => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
@@ -275,6 +400,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     source.playbackRate.value = state.speed;
     sourceNodeRef.current = source;
 
+    // Cria os nós de efeito básico
     const mainGain = ctx.createGain();
     mainGain.gain.value = state.volume / 100;
     
@@ -292,18 +418,112 @@ const useAudioPlayer = (audioFile: File | null) => {
     bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
     bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
 
+    // Conecta os nós básicos
     source.connect(dryGain);
     source.connect(wetGain);
     wetGain.connect(convolver);
     dryGain.connect(mainGain);
     convolver.connect(mainGain);
     mainGain.connect(bassBoost);
-    bassBoost.connect(ctx.destination);
 
-    nodesRef.current = { convolver, wetGain, dryGain, mainGain, bassBoost };
+    let outputNode: AudioNode = bassBoost;
+
+    // Configura o 7.1 surround se habilitado
+    if (state.surround) {
+      // Cria splitter e merger para manipular canais
+      const splitter = ctx.createChannelSplitter(2);
+      const merger = ctx.createChannelMerger(AUDIO_CONFIG.SURROUND_CHANNELS);
+      
+      // Cria panners e filtros HRTF para cada canal
+      const panners = createSurroundPanners(ctx, state.surroundPositions);
+      const hrtfFilters = createHRTFFilters(ctx);
+      
+      // Cria ganhos para controlar a distribuição espacial
+      const leftGain = ctx.createGain();
+      const rightGain = ctx.createGain();
+      const centerGain = ctx.createGain();
+      const rearGain = ctx.createGain();
+      
+      // Ajusta os ganhos para uma distribuição equilibrada
+      leftGain.gain.value = 0.8;
+      rightGain.gain.value = 0.8;
+      centerGain.gain.value = 0.6;
+      rearGain.gain.value = 0.7;
+      
+      // Conecta: bassBoost -> splitter
+      bassBoost.connect(splitter);
+      
+      // Distribui os canais de entrada para melhor cobertura espacial com filtros HRTF
+      // Canal esquerdo (0) vai para os alto-falantes da esquerda com ganho e filtros
+      splitter.connect(leftGain, 0);
+      leftGain.connect(hrtfFilters[2]); // Filtro HRTF para front left
+      hrtfFilters[2].connect(panners[2]); // Front left
+      
+      leftGain.connect(hrtfFilters[4]); // Filtro HRTF para side left
+      hrtfFilters[4].connect(panners[4]); // Side left
+      
+      leftGain.connect(hrtfFilters[6]); // Filtro HRTF para rear left
+      hrtfFilters[6].connect(panners[6]); // Rear left
+      
+      // Canal direito (1) vai para os alto-falantes da direita com ganho e filtros
+      splitter.connect(rightGain, 1);
+      rightGain.connect(hrtfFilters[1]); // Filtro HRTF para front right
+      hrtfFilters[1].connect(panners[1]); // Front right
+      
+      rightGain.connect(hrtfFilters[3]); // Filtro HRTF para side right
+      hrtfFilters[3].connect(panners[3]); // Side right
+      
+      rightGain.connect(hrtfFilters[5]); // Filtro HRTF para rear right
+      hrtfFilters[5].connect(panners[5]); // Rear right
+      
+      // Canal central e traseiro recebem ambos os canais para manter o centro
+      splitter.connect(centerGain, 0);
+      splitter.connect(centerGain, 1);
+      centerGain.connect(hrtfFilters[0]); // Filtro HRTF para front center
+      hrtfFilters[0].connect(panners[0]); // Front center
+      
+      splitter.connect(rearGain, 0);
+      splitter.connect(rearGain, 1);
+      rearGain.connect(hrtfFilters[7]); // Filtro HRTF para rear center
+      hrtfFilters[7].connect(panners[7]); // Rear center
+      
+      // Conecta todos os panners ao merger
+      panners.forEach((panner, index) => {
+        panner.connect(merger, 0, index);
+      });
+      
+      outputNode = merger;
+      nodesRef.current.splitter = splitter;
+      nodesRef.current.merger = merger;
+      nodesRef.current.panners = panners;
+      nodesRef.current.hrtfFilters = hrtfFilters;
+    }
+
+    // Configura o 8D se habilitado
+    if (state.eightD.enabled) {
+      if (!nodesRef.current.eightDPanner) {
+        nodesRef.current.eightDPanner = createEightDPanner(ctx);
+      }
+      
+      // Conecta ao panner 8D
+      outputNode.connect(nodesRef.current.eightDPanner);
+      outputNode = nodesRef.current.eightDPanner;
+    }
+
+    // Conecta ao destino final
+    outputNode.connect(ctx.destination);
+
+    nodesRef.current = { 
+      ...nodesRef.current, 
+      convolver, 
+      wetGain, 
+      dryGain, 
+      mainGain, 
+      bassBoost 
+    };
     
     return source;
-  }, [state.speed, state.reverb, state.volume, state.bass, createImpulseResponse]);
+  }, [state.speed, state.reverb, state.volume, state.bass, state.surround, state.surroundPositions, state.eightD.enabled, createImpulseResponse, createSurroundPanners, createEightDPanner, createHRTFFilters]);
 
   const play = useCallback(() => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
@@ -461,6 +681,45 @@ const useAudioPlayer = (audioFile: File | null) => {
     };
   }, [audioFile, generateWaveform]);
 
+  // Update 8D position (auto rotação)
+  useEffect(() => {
+    if (!state.eightD.enabled || !state.eightD.autoRotate || !state.isPlaying) return;
+
+    let intervalId: ReturnType<typeof setInterval>;
+    
+    // Atualiza a posição do panner a cada 50ms para animação suave
+    intervalId = setInterval(() => {
+      eightDAngleRef.current = (eightDAngleRef.current + (state.eightD.rotationSpeed * 360 * 0.05)) % 360;
+      dispatch({ type: 'SET_EIGHT_D_MANUAL_POSITION', value: eightDAngleRef.current });
+    }, 50);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [state.eightD.enabled, state.eightD.autoRotate, state.eightD.rotationSpeed, state.isPlaying]);
+
+  // Update surround sound positions
+  useEffect(() => {
+    // Atualiza posições do surround
+    if (nodesRef.current.panners && state.surround) {
+      state.surroundPositions.forEach((pos, index) => {
+        if (nodesRef.current.panners && nodesRef.current.panners[index]) {
+          const x = Math.sin(pos.angle);
+          const z = -Math.cos(pos.angle); // Negativo para frente
+          nodesRef.current.panners[index].setPosition(x, pos.elevation, z);
+        }
+      });
+    }
+    
+    // Atualiza posição do 8D
+    if (nodesRef.current.eightDPanner && state.eightD.enabled) {
+      const angleRad = (state.eightD.manualPosition * Math.PI) / 180;
+      const x = Math.sin(angleRad);
+      const z = -Math.cos(angleRad); // Negativo para frente
+      nodesRef.current.eightDPanner.setPosition(x, 0, z);
+    }
+  }, [state.surroundPositions, state.surround, state.eightD.enabled, state.eightD.manualPosition]);
+
   // Update UI during playback
   useEffect(() => {
     if (!state.isPlaying) {
@@ -535,6 +794,11 @@ const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [state.bass]);
 
+  // Função para resetar as posições do surround para o padrão
+  const resetSurroundPositions = useCallback(() => {
+    dispatch({ type: 'SET_SURROUND_POSITIONS', value: [...DEFAULT_SURROUND_POSITIONS] });
+  }, []);
+
   return {
     ...state,
     visualizerData,
@@ -545,6 +809,13 @@ const useAudioPlayer = (audioFile: File | null) => {
     setReverb: (value: number) => dispatch({ type: 'SET_REVERB', value }),
     setVolume: (value: number) => dispatch({ type: 'SET_VOLUME', value }),
     setBass: (value: number) => dispatch({ type: 'SET_BASS', value }),
+    setSurround: (value: boolean) => dispatch({ type: 'SET_SURROUND', value }),
+    setSurroundPositions: (value: { angle: number; elevation: number }[]) => dispatch({ type: 'SET_SURROUND_POSITIONS', value }),
+    resetSurroundPositions,
+    setEightDEnabled: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_ENABLED', value }),
+    setEightDAutoRotate: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_AUTO_ROTATE', value }),
+    setEightDRotationSpeed: (value: number) => dispatch({ type: 'SET_EIGHT_D_ROTATION_SPEED', value }),
+    setEightDManualPosition: (value: number) => dispatch({ type: 'SET_EIGHT_D_MANUAL_POSITION', value }),
   };
 };
 
@@ -654,6 +925,173 @@ const Waveform = memo<{
   </div>
 ));
 
+const ToggleSwitch = memo<{
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}>(({ label, checked, onChange }) => (
+  <div className="flex items-center justify-between py-2">
+    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
+    <button
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+        checked ? 'bg-accent' : 'bg-zinc-300 dark:bg-zinc-600'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  </div>
+));
+
+const EightDControls = memo<{
+  eightD: {
+    enabled: boolean;
+    autoRotate: boolean;
+    rotationSpeed: number;
+    manualPosition: number;
+  };
+  setEightDAutoRotate: (value: boolean) => void;
+  setEightDRotationSpeed: (value: number) => void;
+  setEightDManualPosition: (value: number) => void;
+}>(({ eightD, setEightDAutoRotate, setEightDRotationSpeed, setEightDManualPosition }) => {
+  if (!eightD.enabled) return null;
+
+  return (
+    <div className="space-y-4 mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+      <ToggleSwitch 
+        label="Auto Rotation" 
+        checked={eightD.autoRotate} 
+        onChange={setEightDAutoRotate} 
+      />
+      
+      {!eightD.autoRotate && (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Manual Position</label>
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">{Math.round(eightD.manualPosition)}°</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={eightD.manualPosition}
+            onChange={(e) => setEightDManualPosition(Number(e.target.value))}
+            className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+      )}
+      
+      {eightD.autoRotate && (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Rotation Speed</label>
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">{eightD.rotationSpeed.toFixed(1)}x</span>
+          </div>
+          <input
+            type="range"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value={eightD.rotationSpeed}
+            onChange={(e) => setEightDRotationSpeed(Number(e.target.value))}
+            className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+      )}
+    </div>
+  );
+});
+
+const SurroundControls = memo<{
+  surround: boolean;
+  surroundPositions: { angle: number; elevation: number }[];
+  setSurroundPositions: (value: { angle: number; elevation: number }[]) => void;
+  resetSurroundPositions: () => void;
+}>(({ surround, surroundPositions, setSurroundPositions, resetSurroundPositions }) => {
+  if (!surround) return null;
+
+  const handlePositionChange = (index: number, field: 'angle' | 'elevation', value: number) => {
+    const newPositions = [...surroundPositions];
+    newPositions[index] = { ...newPositions[index], [field]: value };
+    setSurroundPositions(newPositions);
+  };
+
+  const channelNames = [
+    "Front Center",
+    "Front Right",
+    "Front Left",
+    "Side Right",
+    "Side Left",
+    "Rear Right",
+    "Rear Left",
+    "Rear Center"
+  ];
+
+  return (
+    <div className="space-y-4 mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+      <div className="flex justify-between items-center mb-3">
+        <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100">Channel Positions</h4>
+        <button
+          onClick={resetSurroundPositions}
+          className="text-xs px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+      
+      <div className="space-y-4 max-h-60 overflow-y-auto">
+        {surroundPositions.map((position, index) => (
+          <div key={index} className="space-y-2 p-3 bg-zinc-200 dark:bg-zinc-700 rounded-lg">
+            <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              {channelNames[index]}
+            </div>
+            
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-zinc-700 dark:text-zinc-300">Angle</label>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {Math.round(position.angle * 180 / Math.PI)}°
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-3.14"
+                max="3.14"
+                step="0.01"
+                value={position.angle}
+                onChange={(e) => handlePositionChange(index, 'angle', Number(e.target.value))}
+                className="w-full h-2 bg-zinc-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-zinc-700 dark:text-zinc-300">Elevation</label>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {Math.round(position.elevation * 180 / Math.PI)}°
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-1.57"
+                max="1.57"
+                step="0.01"
+                value={position.elevation}
+                onChange={(e) => handlePositionChange(index, 'elevation', Number(e.target.value))}
+                className="w-full h-2 bg-zinc-300 dark:bg-zinc-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
 const SettingsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -760,7 +1198,7 @@ const EditorPage: React.FC<{
   const player = useAudioPlayer(audioFile);
   const { presets, savePreset, deletePreset } = usePresets();
 
-  const throttledSetSpeed = useThrottledCallback(player.setSpeed, 50);
+  // const throttledSetSpeed = useThrottledCallback(player.setSpeed, 50);
 
   const handleDownload = useCallback(async () => {
     setIsRendering(true);
@@ -769,8 +1207,8 @@ const EditorPage: React.FC<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass } = player;
-    savePreset(name, { speed, reverb, volume, bass });
+    const { speed, reverb, volume, bass, surround, surroundPositions, eightD } = player;
+    savePreset(name, { speed, reverb, volume, bass, surround, surroundPositions, eightD });
   };
 
   const handleLoadPreset = (settings: any) => {
@@ -778,6 +1216,14 @@ const EditorPage: React.FC<{
     player.setReverb(settings.reverb);
     player.setVolume(settings.volume);
     player.setBass(settings.bass);
+    player.setSurround(settings.surround);
+    if (settings.surroundPositions) {
+      player.setSurroundPositions(settings.surroundPositions);
+    }
+    player.setEightDEnabled(settings.eightD.enabled);
+    player.setEightDAutoRotate(settings.eightD.autoRotate);
+    player.setEightDRotationSpeed(settings.eightD.rotationSpeed);
+    player.setEightDManualPosition(settings.eightD.manualPosition);
     setIsSettingsOpen(false);
   };
 
@@ -872,7 +1318,7 @@ const EditorPage: React.FC<{
         <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
           <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">Audio Effects</h3>
           <div className="space-y-6">
-            <Slider label="Speed" value={player.speed} onChange={throttledSetSpeed} 
+                        <Slider label="Speed" value={player.speed} onChange={player.setSpeed} 
               min={AUDIO_CONFIG.MIN_SPEED} max={AUDIO_CONFIG.MAX_SPEED} step={AUDIO_CONFIG.SPEED_STEP} unit="x" />
             <Slider label="Reverb" value={player.reverb} onChange={player.setReverb} 
               min={0} max={100} step={5} unit="%" />
@@ -880,6 +1326,37 @@ const EditorPage: React.FC<{
               min={0} max={200} step={1} unit="%" />
             <Slider label="Bass Boost" value={player.bass} onChange={player.setBass} 
               min={0} max={100} step={1} unit="%" />
+            
+            {/* Novos controles de espacialização */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-3">Spatial Audio</h4>
+              
+              <ToggleSwitch 
+                label="7.1 Surround Sound" 
+                checked={player.surround} 
+                onChange={player.setSurround} 
+              />
+              
+              <SurroundControls 
+                surround={player.surround}
+                surroundPositions={player.surroundPositions}
+                setSurroundPositions={player.setSurroundPositions}
+                resetSurroundPositions={player.resetSurroundPositions}
+              />
+              
+              <ToggleSwitch 
+                label="8D Audio" 
+                checked={player.eightD.enabled} 
+                onChange={player.setEightDEnabled} 
+              />
+              
+              <EightDControls 
+                eightD={player.eightD}
+                setEightDAutoRotate={player.setEightDAutoRotate}
+                setEightDRotationSpeed={player.setEightDRotationSpeed}
+                setEightDManualPosition={player.setEightDManualPosition}
+              />
+            </div>
           </div>
         </section>
       </main>
