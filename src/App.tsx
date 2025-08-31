@@ -448,6 +448,7 @@ const useAudioPlayer = (audioFile: File | null) => {
         }
         
         // Reinicia o tempo e toca novamente do início.
+        dispatch({ type: 'SET_TIME', current: 0, progress: 0 });
         timeRef.current.pause = 0;
         play(); 
         return; 
