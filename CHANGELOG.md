@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-08-31
+
+### Refactored
+
+- **Codebase Restructuring**: Refactored the entire codebase to improve maintainability and organization:
+  - Split the monolithic App.tsx file into multiple smaller, focused modules
+  - Created separate directories for components, hooks, utils, constants, and types
+  - Each module now has a single responsibility, making the codebase easier to understand and maintain
+  - Improved type safety with proper TypeScript interfaces and type definitions
+  - Enhanced code reusability and testability
+
+## [1.5.2] - 2025-08-31
+
+### Fixed
+
+- **Instant Spatial Audio Application**: Fixed the implementation so that both 7.1 surround sound and 8D audio effects are now applied instantly without requiring the user to pause and resume playback.
+- **8D Default Rotation Speed**: Changed the default rotation speed for 8D audio from 0.5 to 0.2 rotations per second for a more subtle effect.
+
 ## [1.5.1] - 2025-08-31
 
 ### Improved

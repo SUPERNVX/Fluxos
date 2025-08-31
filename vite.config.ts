@@ -3,16 +3,23 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
-  const baseConfig = {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        '@': path.resolve(process.cwd(), 'src'),
-      },
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), 'src'),
     },
-    base: command === 'build' ? '/Fluxos/' : '/',
-  };
-
-  return baseConfig;
+  },
+  base: '/Fluxos/',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        }
+      }
+    }
+  }
 });

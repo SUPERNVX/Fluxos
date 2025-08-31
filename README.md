@@ -42,6 +42,23 @@ Ferramentas:
 └── ESLint (Qualidade de Código)
 ```
 
+### Arquitetura do Projeto
+
+O projeto foi refatorado para uma arquitetura modular bem organizada:
+
+```
+src/
+├── components/     # Componentes React reutilizáveis
+├── hooks/         # Hooks customizados
+├── utils/         # Funções utilitárias
+├── constants/      # Constantes da aplicação
+├── types/         # Definições de tipos TypeScript
+├── reducers/      # Reducers para gerenciamento de estado
+└── App.tsx        # Componente principal da aplicação
+```
+
+Cada módulo tem responsabilidades bem definidas, facilitando a manutenção e evolução do código.
+
 ## 🔧 Configuração e Desenvolvimento
 
 ### Instalação

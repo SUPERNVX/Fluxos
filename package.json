@@ -2,7 +2,7 @@
   "name": "fluxos",
   "private": true,
   "homepage": "https://SUPERNVX.github.io/Fluxos",
-  "version": "0.0.0",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
