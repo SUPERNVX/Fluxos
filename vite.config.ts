@@ -11,14 +11,8 @@ export default defineConfig(({ command }) => {
         '@': path.resolve(process.cwd(), 'src'),
       },
     },
+    base: command === 'build' ? '/Fluxos/' : '/',
   };
-
-  if (command === 'build') {
-    return {
-      ...baseConfig,
-      base: '/Fluxos/',
-    };
-  }
 
   return baseConfig;
 });

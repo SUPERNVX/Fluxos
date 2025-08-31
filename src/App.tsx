@@ -224,6 +224,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     bassBoost?: BiquadFilterNode;
   }>({});
   const timeRef = useRef({ start: 0, pause: 0 });
+  const animationFrameRef = useRef<number>(0);
 
   const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext) => {
     const { REVERB_IMPULSE_DURATION: duration, REVERB_IMPULSE_DECAY: decay } = AUDIO_CONFIG;
@@ -261,10 +262,17 @@ const useAudioPlayer = (audioFile: File | null) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
     
+    // Limpa o nó anterior se existir
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch (e) {}
+      sourceNodeRef.current = null;
+    }
+    
     const source = ctx.createBufferSource();
     source.buffer = audioBufferRef.current;
     source.playbackRate.value = state.speed;
-    source.loop = true;
     sourceNodeRef.current = source;
 
     const mainGain = ctx.createGain();
@@ -293,25 +301,38 @@ const useAudioPlayer = (audioFile: File | null) => {
     bassBoost.connect(ctx.destination);
 
     nodesRef.current = { convolver, wetGain, dryGain, mainGain, bassBoost };
+    
+    return source;
   }, [state.speed, state.reverb, state.volume, state.bass, createImpulseResponse]);
 
   const play = useCallback(() => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     
-    setupAudioGraph();
-    const source = sourceNodeRef.current;
+    // Se já temos um source ativo, paramos antes de criar um novo
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch (e) {}
+      sourceNodeRef.current = null;
+    }
+    
+    const source = setupAudioGraph();
     if (!source) return;
 
     const offset = Math.max(0, timeRef.current.pause);
-    if (offset >= audioBufferRef.current.duration) return;
+    if (offset >= audioBufferRef.current.duration) {
+      // Se o offset for maior que a duração, reinicia do início
+      timeRef.current.pause = 0;
+      timeRef.current.start = audioContextRef.current.currentTime;
+    }
 
-    source.start(0, offset);
+    source.start(0, timeRef.current.pause);
     timeRef.current.start = audioContextRef.current.currentTime;
     dispatch({ type: 'SET_PLAYING', value: true });
   }, [setupAudioGraph]);
 
   const pause = useCallback(() => {
-    if (!sourceNodeRef.current || !audioContextRef.current || !state.isPlaying) return;
+    if (!sourceNodeRef.current || !audioContextRef.current) return;
 
     const elapsed = (audioContextRef.current.currentTime - timeRef.current.start) * state.speed;
     try { sourceNodeRef.current.stop(); } catch(e) {}
@@ -322,7 +343,7 @@ const useAudioPlayer = (audioFile: File | null) => {
     );
     
     dispatch({ type: 'SET_PLAYING', value: false });
-  }, [state.speed, state.isPlaying]);
+  }, [state.speed]);
 
   const togglePlayPause = useCallback(() => {
     if (audioContextRef.current?.state === 'suspended') {
@@ -338,8 +359,10 @@ const useAudioPlayer = (audioFile: File | null) => {
     timeRef.current.pause = newTime;
     dispatch({ type: 'SET_TIME', current: newTime, progress: newProgress });
 
+    // Se estiver tocando, reinicia a reprodução na nova posição
     if (state.isPlaying) {
       try { sourceNodeRef.current?.stop(); } catch(e) {}
+      sourceNodeRef.current = null;
       play();
     }
   }, [state.isPlaying, play]);
@@ -408,7 +431,14 @@ const useAudioPlayer = (audioFile: File | null) => {
   useEffect(() => {
     if (!audioFile) return;
     
-    sourceNodeRef.current?.stop?.();
+    // Limpa os recursos anteriores
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch(e) {}
+      sourceNodeRef.current = null;
+    }
+    
     dispatch({ type: 'NEW_TRACK_RESET' });
     timeRef.current = { start: 0, pause: 0 };
 
@@ -423,16 +453,26 @@ const useAudioPlayer = (audioFile: File | null) => {
       generateWaveform(decoded);
     }).catch(console.error);
 
-    return () => { audioContextRef.current?.close(); };
+    return () => { 
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
   }, [audioFile, generateWaveform]);
 
   // Update UI during playback
   useEffect(() => {
-    if (!state.isPlaying) return;
+    if (!state.isPlaying) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = 0;
+      }
+      return;
+    }
 
-    let frameId: number;
     const updateUI = () => {
-      if (!audioContextRef.current || !audioBufferRef.current || !state.isPlaying) {
+      if (!audioContextRef.current || !audioBufferRef.current) {
         return;
       }
 
@@ -440,26 +480,32 @@ const useAudioPlayer = (audioFile: File | null) => {
       const current = timeRef.current.pause + elapsed;
       const total = audioBufferRef.current.duration;
 
+      // Verifica se o áudio terminou e precisa reiniciar (loop)
       if (current >= total) {
-        try {
-          sourceNodeRef.current?.stop();
-        } catch (e) {
-          // Ignora erros, o nó pode já ter sido parado.
-        }
-        
-        // Reinicia o tempo e toca novamente do início.
-        dispatch({ type: 'SET_TIME', current: 0, progress: 0 });
+        // Reinicia o tempo
         timeRef.current.pause = 0;
-        play(); 
-        return; 
+        timeRef.current.start = audioContextRef.current.currentTime;
+        
+        // Atualiza a interface imediatamente
+        dispatch({ type: 'SET_TIME', current: 0, progress: 0 });
+        
+        // Reinicia a reprodução
+        play();
       } else {
         dispatch({ type: 'SET_TIME', current, progress: (current / total) * 100 });
-        frameId = requestAnimationFrame(updateUI);
       }
+      
+      animationFrameRef.current = requestAnimationFrame(updateUI);
     };
 
-    frameId = requestAnimationFrame(updateUI);
-    return () => cancelAnimationFrame(frameId);
+    animationFrameRef.current = requestAnimationFrame(updateUI);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = 0;
+      }
+    };
   }, [state.isPlaying, state.speed, play]);
 
   // Update audio nodes
@@ -888,32 +934,43 @@ export default function App() {
       coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
     });
 
-    (window as any).jsmediatags.read(file, {
-      onSuccess: (tag: any) => {
-        let coverUrl = `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`;
-        if (tag.tags.picture) {
-          const { data, format } = tag.tags.picture;
-          let base64String = "";
-          for (let i = 0; i < data.length; i++) {
-            base64String += String.fromCharCode(data[i]);
+    // Verifica se jsmediatags está disponível antes de usá-lo
+    if ((window as any).jsmediatags) {
+      (window as any).jsmediatags.read(file, {
+        onSuccess: (tag: any) => {
+          let coverUrl = `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`;
+          if (tag.tags.picture) {
+            const { data, format } = tag.tags.picture;
+            let base64String = "";
+            for (let i = 0; i < data.length; i++) {
+              base64String += String.fromCharCode(data[i]);
+            }
+            coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
           }
-          coverUrl = `data:${format};base64,${window.btoa(base64String)}`;
+          setTrack({
+            name: tag.tags.title || file.name.replace(/\.[^/.]+$/, ""),
+            artist: tag.tags.artist || 'Unknown Artist',
+            coverUrl: coverUrl
+          });
+        },
+        onError: (error: any) => {
+          console.error("Could not read audio tags, using fallback.", error);
+          setTrack({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            artist: 'Unknown Artist',
+            coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
+          });
         }
-        setTrack({
-          name: tag.tags.title || file.name.replace(/\.[^/.]+$/, ""),
-          artist: tag.tags.artist || 'Unknown Artist',
-          coverUrl: coverUrl
-        });
-      },
-      onError: (error: any) => {
-        console.error("Could not read audio tags, using fallback.", error);
-        setTrack({
-          name: file.name.replace(/\.[^/.]+$/, ""),
-          artist: 'Unknown Artist',
-          coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
-        });
-      }
-    });
+      });
+    } else {
+      // Fallback caso jsmediatags não esteja disponível
+      console.warn("jsmediatags not available, using fallback.");
+      setTrack({
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        artist: 'Unknown Artist',
+        coverUrl: `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`
+      });
+    }
   }, []);
 
   return (
