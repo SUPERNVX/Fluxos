@@ -59,6 +59,32 @@ npm run dev
 npm run build
 ```
 
+## 🚀 Deploy no GitHub Pages
+
+Para publicar suas alterações no site, siga este fluxo de trabalho:
+
+1.  **Adicione os arquivos modificados ao Git:**
+    ```bash
+    # Adiciona todos os arquivos de uma vez
+    git add .
+    ```
+
+2.  **Crie um "commit" com uma mensagem clara:**
+    ```bash
+    git commit -m "feat: Adiciona nova funcionalidade de exemplo"
+    ```
+
+3.  **Envie as alterações para o repositório principal:**
+    ```bash
+    git push
+    ```
+
+4.  **Execute o script de deploy para o GitHub Pages:**
+    Este comando irá fazer o build do projeto e enviar para o branch `gh-pages` automaticamente.
+    ```bash
+    npm run deploy
+    ```
+
 ## 📈 Melhorias Futuras
 
 - [ ] Adicionar mais efeitos de áudio (ex: Equalizador, Delay).

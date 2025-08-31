@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-08-31
+
+### Added
+ - **Configuration profiles**: Create sound config profiles in the settings page
+
+### Fixed
+
+- **Audio Loop Bug**: Fixed a critical bug where the audio would continue playing in a loop, but the UI (progress bar, spectrogram) would reset and freeze, leading to state desynchronization and duplicate audio playback. The fix replaces the native Web Audio API loop with a manual implementation for precise state control.
+
 ## [1.2.0] - 2025-08-30
 
 ### Added
