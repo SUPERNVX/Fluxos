@@ -1,7 +1,6 @@
 import type { AudioState, AudioAction } from '../types/audio';
 import { 
   AUDIO_CONFIG, 
-  DEFAULT_SURROUND_POSITIONS, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
   DEFAULT_SPATIAL_AUDIO 
@@ -17,8 +16,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_REVERB': return { ...state, reverb: action.value };
     case 'SET_VOLUME': return { ...state, volume: action.value };
     case 'SET_BASS': return { ...state, bass: action.value };
-    case 'SET_SURROUND': return { ...state, surround: action.value };
-    case 'SET_SURROUND_POSITIONS': return { ...state, surroundPositions: action.value };
+
     case 'SET_EIGHT_D_ENABLED': return { 
       ...state, 
       eightD: { ...state.eightD, enabled: action.value } 
@@ -173,34 +171,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       ...state, 
       spatialAudio: { ...state.spatialAudio, binaural: { ...state.spatialAudio.binaural, width: action.value } } 
     };
-    case 'SET_PANNING_3D_ENABLED': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, enabled: action.value } } 
-    };
-    case 'SET_PANNING_3D_X': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, x: action.value } } 
-    };
-    case 'SET_PANNING_3D_Y': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, y: action.value } } 
-    };
-    case 'SET_PANNING_3D_Z': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, z: action.value } } 
-    };
-    case 'SET_PANNING_3D_AUTO_MOVE': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, autoMove: action.value } } 
-    };
-    case 'SET_PANNING_3D_MOVE_SPEED': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, moveSpeed: action.value } } 
-    };
-    case 'SET_PANNING_3D_MOVE_PATTERN': return { 
-      ...state, 
-      spatialAudio: { ...state.spatialAudio, panning3D: { ...state.spatialAudio.panning3D, movePattern: action.value } } 
-    };
     
     // Reset Actions
     case 'RESET_MODULATION_EFFECTS': return {
@@ -222,8 +192,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       reverb: AUDIO_CONFIG.DEFAULT_REVERB, 
       volume: AUDIO_CONFIG.DEFAULT_VOLUME,
       bass: AUDIO_CONFIG.DEFAULT_BASS,
-      surround: false,
-      surroundPositions: [...DEFAULT_SURROUND_POSITIONS],
       eightD: {
         enabled: false,
         autoRotate: true,

@@ -13,8 +13,7 @@ export type AudioState = {
   reverb: number;
   volume: number;
   bass: number;
-  surround: boolean; // 7.1 surround
-  surroundPositions: { angle: number; elevation: number }[]; // Posições personalizadas dos canais
+
   eightD: {
     enabled: boolean;
     autoRotate: boolean;
@@ -78,15 +77,6 @@ export type AudioState = {
       damping: number; // 0-100%
       width: number; // 0-100%
     };
-    panning3D: {
-      enabled: boolean;
-      x: number; // -1 to 1
-      y: number; // -1 to 1
-      z: number; // -1 to 1
-      autoMove: boolean;
-      moveSpeed: number; // 0.1-5
-      movePattern: 'circle' | 'figure8' | 'random' | 'pendulum';
-    };
   };
 };
 
@@ -99,8 +89,7 @@ export type AudioAction =
   | { type: 'SET_REVERB'; value: number }
   | { type: 'SET_VOLUME'; value: number }
   | { type: 'SET_BASS'; value: number }
-  | { type: 'SET_SURROUND'; value: boolean }
-  | { type: 'SET_SURROUND_POSITIONS'; value: { angle: number; elevation: number }[] }
+
   | { type: 'SET_EIGHT_D_ENABLED'; value: boolean }
   | { type: 'SET_EIGHT_D_AUTO_ROTATE'; value: boolean }
   | { type: 'SET_EIGHT_D_ROTATION_SPEED'; value: number }
@@ -141,13 +130,6 @@ export type AudioAction =
   | { type: 'SET_BINAURAL_ROOM_SIZE'; value: number }
   | { type: 'SET_BINAURAL_DAMPING'; value: number }
   | { type: 'SET_BINAURAL_WIDTH'; value: number }
-  | { type: 'SET_PANNING_3D_ENABLED'; value: boolean }
-  | { type: 'SET_PANNING_3D_X'; value: number }
-  | { type: 'SET_PANNING_3D_Y'; value: number }
-  | { type: 'SET_PANNING_3D_Z'; value: number }
-  | { type: 'SET_PANNING_3D_AUTO_MOVE'; value: boolean }
-  | { type: 'SET_PANNING_3D_MOVE_SPEED'; value: number }
-  | { type: 'SET_PANNING_3D_MOVE_PATTERN'; value: 'circle' | 'figure8' | 'random' | 'pendulum' }
   | { type: 'RESET_MODULATION_EFFECTS' }
   | { type: 'RESET_DISTORTION_EFFECTS' }
   | { type: 'RESET_SPATIAL_AUDIO_EFFECTS' }

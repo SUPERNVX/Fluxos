@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { 
   AUDIO_CONFIG, 
-  DEFAULT_SURROUND_POSITIONS, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
   DEFAULT_SPATIAL_AUDIO 
@@ -26,8 +25,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     reverb: AUDIO_CONFIG.DEFAULT_REVERB,
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
     bass: AUDIO_CONFIG.DEFAULT_BASS,
-    surround: false,
-    surroundPositions: [...DEFAULT_SURROUND_POSITIONS],
     eightD: {
       enabled: false,
       autoRotate: true,
@@ -52,10 +49,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     dryGain?: GainNode;
     mainGain?: GainNode;
     bassBoost?: BiquadFilterNode;
-    splitter?: ChannelSplitterNode; // Para surround
-    merger?: ChannelMergerNode; // Para surround
-    panners?: PannerNode[]; // Para surround (8 canais)
-    hrtfFilters?: BiquadFilterNode[]; // Filtros HRTF
     eightDPanner?: PannerNode; // Para 8D
     // Novos efeitos
     flanger?: any;
@@ -66,15 +59,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
     bitcrusher?: any;
     fuzz?: any;
     binauralProcessor?: any;
-    panning3D?: PannerNode;
-    panning3DGain?: GainNode;
-    surroundGains?: GainNode[];
-    surroundDelays?: DelayNode[];
   }>({});
   const timeRef = useRef({ start: 0, pause: 0 });
   const animationFrameRef = useRef<number>(0);
   const eightDAngleRef = useRef(0); // Para animação automática do 8D
-  const panning3DTimeRef = useRef(0); // Para controle de tempo do movimento 3D
 
   const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext) => {
     const { REVERB_IMPULSE_DURATION: duration, REVERB_IMPULSE_DECAY: decay } = AUDIO_CONFIG;
@@ -108,105 +96,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, []);
 
-  // Função para criar filtros HRTF para cada canal
-  const createHRTFFilters = useCallback((ctx: AudioContext) => {
-    const filters: BiquadFilterNode[] = [];
-    
-    // Filtros HRTF personalizados para cada canal (valores típicos)
-    const hrtfSettings = [
-      // Front center - neutro
-      { type: 'peaking', frequency: 2000, Q: 1.0, gain: 0 },
-      // Front right - acentua agudos
-      { type: 'peaking', frequency: 4000, Q: 0.8, gain: 2 },
-      // Front left - acentua agudos
-      { type: 'peaking', frequency: 4000, Q: 0.8, gain: 2 },
-      // Side right - acentua médios
-      { type: 'peaking', frequency: 1000, Q: 1.2, gain: 3 },
-      // Side left - acentua médios
-      { type: 'peaking', frequency: 1000, Q: 1.2, gain: 3 },
-      // Rear right - atenua graves
-      { type: 'highshelf', frequency: 500, Q: 1.0, gain: -2 },
-      // Rear left - atenua graves
-      { type: 'highshelf', frequency: 500, Q: 1.0, gain: -2 },
-      // Rear center - atenua graves
-      { type: 'highshelf', frequency: 300, Q: 1.0, gain: -3 }
-    ];
-    
-    for (let i = 0; i < AUDIO_CONFIG.SURROUND_CHANNELS; i++) {
-      const filter = ctx.createBiquadFilter();
-      const settings = hrtfSettings[i];
-      
-      filter.type = settings.type as BiquadFilterType;
-      filter.frequency.setValueAtTime(settings.frequency, 0);
-      filter.Q.setValueAtTime(settings.Q, 0);
-      filter.gain.setValueAtTime(settings.gain, 0);
-      
-      filters.push(filter);
-    }
-    
-    return filters;
-  }, []);
 
-  // Função melhorada para criar sistema 7.1 surround de alta qualidade
-  const createAdvancedSurroundSystem = useCallback((ctx: AudioContext, positions: { angle: number; elevation: number }[]) => {
-    // Cria splitter para separar canais estéreo
-    const splitter = ctx.createChannelSplitter(2);
-    const merger = ctx.createChannelMerger(2);
-    
-    // Cria panners para cada canal surround
-    const panners: PannerNode[] = [];
-    const channelGains: GainNode[] = [];
-    const delays: DelayNode[] = [];
-    
-    // Configurações específicas para cada canal 7.1
-    const channelConfigs = [
-      { name: 'Front Center', gain: 0.8, delay: 0 },
-      { name: 'Front Right', gain: 0.9, delay: 0.001 },
-      { name: 'Front Left', gain: 0.9, delay: 0.001 },
-      { name: 'Side Right', gain: 0.7, delay: 0.003 },
-      { name: 'Side Left', gain: 0.7, delay: 0.003 },
-      { name: 'Rear Right', gain: 0.6, delay: 0.008 },
-      { name: 'Rear Left', gain: 0.6, delay: 0.008 },
-      { name: 'Rear Center', gain: 0.5, delay: 0.012 }
-    ];
-    
-    for (let i = 0; i < AUDIO_CONFIG.SURROUND_CHANNELS; i++) {
-      // Cria panner com configurações otimizadas
-      const panner = ctx.createPanner();
-      panner.panningModel = 'HRTF';
-      panner.distanceModel = 'linear';
-      panner.refDistance = 0.5;
-      panner.maxDistance = 3;
-      panner.rolloffFactor = 0.8;
-      panner.coneInnerAngle = 60;
-      panner.coneOuterAngle = 120;
-      panner.coneOuterGain = 0.3;
-      
-      // Posicionamento 3D melhorado
-      const pos = positions[i];
-      const distance = 1.2; // Distância otimizada para HRTF
-      const x = Math.sin(pos.angle) * distance;
-      const z = -Math.cos(pos.angle) * distance;
-      const y = pos.elevation * 0.5; // Elevação mais sutil
-      
-      panner.setPosition(x, y, z);
-      panner.setOrientation(0, 0, -1);
-      
-      // Cria gain para controle individual do canal
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(channelConfigs[i].gain, ctx.currentTime);
-      
-      // Cria delay para simular tempo de chegada realístico
-      const delay = ctx.createDelay(0.02);
-      delay.delayTime.setValueAtTime(channelConfigs[i].delay, ctx.currentTime);
-      
-      panners.push(panner);
-      channelGains.push(gain);
-      delays.push(delay);
-    }
-    
-    return { panners, channelGains, delays, splitter, merger };
-  }, []);
+
+
 
   // Função para criar um panner node para 8D
   const createEightDPanner = useCallback((ctx: AudioContext) => {
@@ -381,78 +273,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
 
 
-    // Configura o 7.1 surround melhorado se habilitado
-    if (state.surround) {
-      const surroundSystem = createAdvancedSurroundSystem(ctx, state.surroundPositions);
-      const { panners, channelGains, delays, splitter, merger } = surroundSystem;
-      const hrtfFilters = createHRTFFilters(ctx);
-      
-      // Conecta o output anterior ao splitter
-      outputNode.connect(splitter);
-      
-      // Cria ganhos principais para distribuição inteligente
-      const leftMainGain = ctx.createGain();
-      const rightMainGain = ctx.createGain();
-      const centerMainGain = ctx.createGain();
-      
-      leftMainGain.gain.setValueAtTime(0.85, ctx.currentTime);
-      rightMainGain.gain.setValueAtTime(0.85, ctx.currentTime);
-      centerMainGain.gain.setValueAtTime(0.7, ctx.currentTime);
-      
-      // Conecta canais com processamento avançado
-      splitter.connect(leftMainGain, 0);
-      splitter.connect(rightMainGain, 1);
-      
-      // Canal central recebe mix dos dois canais
-      splitter.connect(centerMainGain, 0);
-      splitter.connect(centerMainGain, 1);
-      
-      // Conecta cada canal através da cadeia: gain -> delay -> hrtf -> panner -> merger
-      const connectChannel = (sourceGain: GainNode, channelIndex: number) => {
-        sourceGain.connect(channelGains[channelIndex]);
-        channelGains[channelIndex].connect(delays[channelIndex]);
-        delays[channelIndex].connect(hrtfFilters[channelIndex]);
-        hrtfFilters[channelIndex].connect(panners[channelIndex]);
-        panners[channelIndex].connect(merger);
-      };
-      
-      // Front Center (0)
-      connectChannel(centerMainGain, 0);
-      
-      // Front Right (1) e Side Right (3)
-      connectChannel(rightMainGain, 1);
-      connectChannel(rightMainGain, 3);
-      
-      // Front Left (2) e Side Left (4)
-      connectChannel(leftMainGain, 2);
-      connectChannel(leftMainGain, 4);
-      
-      // Rear channels recebem mix atenuado
-      const rearLeftGain = ctx.createGain();
-      const rearRightGain = ctx.createGain();
-      rearLeftGain.gain.setValueAtTime(0.6, ctx.currentTime);
-      rearRightGain.gain.setValueAtTime(0.6, ctx.currentTime);
-      
-      leftMainGain.connect(rearLeftGain);
-      rightMainGain.connect(rearRightGain);
-      centerMainGain.connect(rearLeftGain);
-      centerMainGain.connect(rearRightGain);
-      
-      // Rear Right (5), Rear Left (6), Rear Center (7)
-      connectChannel(rearRightGain, 5);
-      connectChannel(rearLeftGain, 6);
-      connectChannel(centerMainGain, 7);
-      
-      outputNode = merger;
-      
-      // Armazena referências para atualizações em tempo real
-      nodesRef.current.splitter = splitter;
-      nodesRef.current.merger = merger;
-      nodesRef.current.panners = panners;
-      nodesRef.current.hrtfFilters = hrtfFilters;
-      nodesRef.current.surroundGains = channelGains;
-      nodesRef.current.surroundDelays = delays;
-    }
+
 
     // === EFEITOS ESPACIAIS AVANÇADOS ===
 
@@ -472,36 +293,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       nodesRef.current.binauralProcessor = { convolver: binauralConvolver, gain: binauralGain };
     }
 
-    // 3D Panning - configuração otimizada para evitar distorção
-    if (state.spatialAudio.panning3D.enabled) {
-      const panner3D = ctx.createPanner();
-      panner3D.panningModel = 'HRTF';
-      panner3D.distanceModel = 'linear';
-      panner3D.refDistance = 0.1;
-      panner3D.maxDistance = 2;
-      panner3D.rolloffFactor = 0.3;
-      panner3D.coneInnerAngle = 180;
-      panner3D.coneOuterAngle = 360;
-      panner3D.coneOuterGain = 0.8;
-      
-      // Posições mais suaves para evitar distorção
-      const smoothX = Math.max(-0.8, Math.min(0.8, state.spatialAudio.panning3D.x));
-      const smoothY = Math.max(-0.5, Math.min(0.5, state.spatialAudio.panning3D.y));
-      const smoothZ = Math.max(-0.8, Math.min(0.8, state.spatialAudio.panning3D.z));
-      
-      panner3D.setPosition(smoothX, smoothY, smoothZ);
-      panner3D.setOrientation(0, 0, -1);
-      
-      // Adiciona um gain para controlar o volume e evitar clipping
-      const panning3DGain = ctx.createGain();
-      panning3DGain.gain.setValueAtTime(0.8, ctx.currentTime);
-      
-      outputNode.connect(panner3D);
-      panner3D.connect(panning3DGain);
-      outputNode = panning3DGain;
-      nodesRef.current.panning3D = panner3D;
-      nodesRef.current.panning3DGain = panning3DGain;
-    }
+
 
     // Configura o 8D se habilitado
     if (state.eightD.enabled) {
@@ -536,9 +328,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     return source;
   }, [
     state.speed, state.reverb, state.volume, state.bass, 
-    state.surround, state.surroundPositions, state.eightD.enabled,
+    state.eightD.enabled,
     state.modulation, state.distortion, state.spatialAudio,
-    createImpulseResponse, createAdvancedSurroundSystem, createEightDPanner, createHRTFFilters
+    createImpulseResponse, createEightDPanner
   ]);
 
   const play = useCallback(() => {
@@ -714,44 +506,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     };
   }, [state.eightD.enabled, state.eightD.autoRotate, state.eightD.rotationSpeed, state.isPlaying]);
 
-  // Update 3D panning auto movement
-  useEffect(() => {
-    if (!state.spatialAudio.panning3D.enabled || !state.spatialAudio.panning3D.autoMove || !state.isPlaying) return;
 
-    let intervalId: ReturnType<typeof setInterval>;
-    
-    intervalId = setInterval(() => {
-      panning3DTimeRef.current += 0.05 * state.spatialAudio.panning3D.moveSpeed;
-      let x = 0, y = 0, z = 0;
-      
-      switch (state.spatialAudio.panning3D.movePattern) {
-        case 'circle':
-          x = Math.sin(panning3DTimeRef.current) * 0.6;
-          z = Math.cos(panning3DTimeRef.current) * 0.6;
-          break;
-        case 'figure8':
-          x = Math.sin(panning3DTimeRef.current) * 0.6;
-          z = Math.sin(panning3DTimeRef.current * 2) * 0.3;
-          break;
-        case 'pendulum':
-          x = Math.sin(panning3DTimeRef.current) * 0.5;
-          break;
-        case 'random':
-          x = (Math.random() - 0.5) * 1.2;
-          y = (Math.random() - 0.5) * 0.8;
-          z = (Math.random() - 0.5) * 1.2;
-          break;
-      }
-      
-      dispatch({ type: 'SET_PANNING_3D_X', value: x });
-      dispatch({ type: 'SET_PANNING_3D_Y', value: y });
-      dispatch({ type: 'SET_PANNING_3D_Z', value: z });
-    }, 50);
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [state.spatialAudio.panning3D.enabled, state.spatialAudio.panning3D.autoMove, state.spatialAudio.panning3D.moveSpeed, state.spatialAudio.panning3D.movePattern, state.isPlaying]);
 
   // Update panner positions
   useEffect(() => {
@@ -762,20 +517,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
       const z = -Math.cos(angleRad); // Negativo para frente
       nodesRef.current.eightDPanner.setPosition(x, 0, z);
     }
-
-    // Atualiza posição do 3D panning com suavização
-    if (nodesRef.current.panning3D && state.spatialAudio.panning3D.enabled) {
-      // Aplica suavização para evitar distorção
-      const smoothX = Math.max(-0.8, Math.min(0.8, state.spatialAudio.panning3D.x));
-      const smoothY = Math.max(-0.5, Math.min(0.5, state.spatialAudio.panning3D.y));
-      const smoothZ = Math.max(-0.8, Math.min(0.8, state.spatialAudio.panning3D.z));
-      
-      nodesRef.current.panning3D.setPosition(smoothX, smoothY, smoothZ);
-    }
   }, [
-    state.eightD.enabled, state.eightD.manualPosition,
-    state.spatialAudio.panning3D.enabled, state.spatialAudio.panning3D.x, 
-    state.spatialAudio.panning3D.y, state.spatialAudio.panning3D.z
+    state.eightD.enabled, state.eightD.manualPosition
   ]);
 
   // Update UI during playback
@@ -959,11 +702,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping, state.spatialAudio.binaural.width]);
 
-  // Função para resetar as posições do surround para o padrão
-  const resetSurroundPositions = useCallback(() => {
-    dispatch({ type: 'SET_SURROUND_POSITIONS', value: [...DEFAULT_SURROUND_POSITIONS] });
-  }, []);
-
   // Função para recriar o grafo de áudio mantendo a reprodução
   const recreateAudioGraph = useCallback(() => {
     if (audioContextRef.current && audioBufferRef.current) {
@@ -986,7 +724,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.fuzz.enabled,
     // Efeitos espaciais - enabled states
     state.spatialAudio.binaural.enabled,
-    state.spatialAudio.panning3D.enabled,
     recreateAudioGraph
   ]);
 
@@ -1000,9 +737,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setReverb: (value: number) => dispatch({ type: 'SET_REVERB', value }),
     setVolume: (value: number) => dispatch({ type: 'SET_VOLUME', value }),
     setBass: (value: number) => dispatch({ type: 'SET_BASS', value }),
-    setSurround: (value: boolean) => dispatch({ type: 'SET_SURROUND', value }),
-    setSurroundPositions: (value: { angle: number; elevation: number }[]) => dispatch({ type: 'SET_SURROUND_POSITIONS', value }),
-    resetSurroundPositions,
+
     setEightDEnabled: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_ENABLED', value }),
     setEightDAutoRotate: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_AUTO_ROTATE', value }),
     setEightDRotationSpeed: (value: number) => dispatch({ type: 'SET_EIGHT_D_ROTATION_SPEED', value }),
@@ -1046,13 +781,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setBinauralRoomSize: (value: number) => dispatch({ type: 'SET_BINAURAL_ROOM_SIZE', value }),
     setBinauralDamping: (value: number) => dispatch({ type: 'SET_BINAURAL_DAMPING', value }),
     setBinauralWidth: (value: number) => dispatch({ type: 'SET_BINAURAL_WIDTH', value }),
-    setPanning3DEnabled: (value: boolean) => dispatch({ type: 'SET_PANNING_3D_ENABLED', value }),
-    setPanning3DX: (value: number) => dispatch({ type: 'SET_PANNING_3D_X', value }),
-    setPanning3DY: (value: number) => dispatch({ type: 'SET_PANNING_3D_Y', value }),
-    setPanning3DZ: (value: number) => dispatch({ type: 'SET_PANNING_3D_Z', value }),
-    setPanning3DAutoMove: (value: boolean) => dispatch({ type: 'SET_PANNING_3D_AUTO_MOVE', value }),
-    setPanning3DMoveSpeed: (value: number) => dispatch({ type: 'SET_PANNING_3D_MOVE_SPEED', value }),
-    setPanning3DMovePattern: (value: 'circle' | 'figure8' | 'random' | 'pendulum') => dispatch({ type: 'SET_PANNING_3D_MOVE_PATTERN', value }),
     
     // Reset Functions
     resetModulationEffects: () => dispatch({ type: 'RESET_MODULATION_EFFECTS' }),

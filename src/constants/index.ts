@@ -1,1 +1,1 @@
-export { AUDIO_CONFIG, DEFAULT_SURROUND_POSITIONS } from './audioConfig';
+export { AUDIO_CONFIG } from './audioConfig';

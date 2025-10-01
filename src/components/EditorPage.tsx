@@ -10,7 +10,6 @@ import { PlayerControls } from './PlayerControls';
 import { Waveform } from './Waveform';
 import { Slider } from './Slider';
 import { ToggleSwitch } from './ToggleSwitch';
-import { SurroundControls } from './SurroundControls';
 import { EightDControls } from './EightDControls';
 import { ModulationControls } from './ModulationControls';
 import { DistortionControls } from './DistortionControls';
@@ -40,8 +39,8 @@ export const EditorPage = memo<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass, surround, surroundPositions, eightD } = player;
-    savePreset(name, { speed, reverb, volume, bass, surround, surroundPositions, eightD });
+    const { speed, reverb, volume, bass, eightD } = player;
+    savePreset(name, { speed, reverb, volume, bass, eightD });
   };
 
   const handleLoadPreset = (settings: any) => {
@@ -49,10 +48,6 @@ export const EditorPage = memo<{
     player.setReverb(settings.reverb);
     player.setVolume(settings.volume);
     player.setBass(settings.bass);
-    player.setSurround(settings.surround);
-    if (settings.surroundPositions) {
-      player.setSurroundPositions(settings.surroundPositions);
-    }
     player.setEightDEnabled(settings.eightD.enabled);
     player.setEightDAutoRotate(settings.eightD.autoRotate);
     player.setEightDRotationSpeed(settings.eightD.rotationSpeed);
@@ -210,18 +205,7 @@ export const EditorPage = memo<{
             <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
               <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-3">Spatial Audio</h4>
               
-              <ToggleSwitch 
-                label="7.1 Surround Sound" 
-                checked={player.surround} 
-                onChange={player.setSurround} 
-              />
-              
-              <SurroundControls 
-                surround={player.surround}
-                surroundPositions={player.surroundPositions}
-                setSurroundPositions={player.setSurroundPositions}
-                resetSurroundPositions={player.resetSurroundPositions}
-              />
+
               
               <ToggleSwitch 
                 label="8D Audio" 
@@ -245,13 +229,6 @@ export const EditorPage = memo<{
                 setBinauralRoomSize={player.setBinauralRoomSize}
                 setBinauralDamping={player.setBinauralDamping}
                 setBinauralWidth={player.setBinauralWidth}
-                setPanning3DEnabled={player.setPanning3DEnabled}
-                setPanning3DX={player.setPanning3DX}
-                setPanning3DY={player.setPanning3DY}
-                setPanning3DZ={player.setPanning3DZ}
-                setPanning3DAutoMove={player.setPanning3DAutoMove}
-                setPanning3DMoveSpeed={player.setPanning3DMoveSpeed}
-                setPanning3DMovePattern={player.setPanning3DMovePattern}
                 resetSpatialAudioEffects={player.resetSpatialAudioEffects}
               />
             </div>

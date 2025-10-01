@@ -31,10 +31,8 @@
 - **Fuzz**: Distorção extrema com controles de quantidade, tom e gate.
 
 ### 🎧 Áudio Espacial Avançado
-- **7.1 Surround Sound**: Emulação de som surround com posições customizáveis dos canais.
-- **8D Audio**: Efeito de rotação automática ou manual ao redor da cabeça.
 - **Processamento Binaural**: Simulação de ambiente com controles de tamanho, amortecimento e largura.
-- **Panning 3D**: Posicionamento manual e automático em espaço 3D com padrões de movimento.
+- **8D Audio**: Efeito de rotação automática ou manual ao redor da cabeça.
 
 ### 🛠️ Recursos Adicionais
 - **Visualizador de Áudio**: Forma de onda interativa da sua música.

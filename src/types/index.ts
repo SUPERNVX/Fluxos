@@ -13,8 +13,7 @@ export type AudioState = {
   reverb: number;
   volume: number;
   bass: number;
-  surround: boolean; // 7.1 surround
-  surroundPositions: { angle: number; elevation: number }[]; // Posições personalizadas dos canais
+
   eightD: {
     enabled: boolean;
     autoRotate: boolean;
@@ -32,8 +31,7 @@ export type AudioAction =
   | { type: 'SET_REVERB'; value: number }
   | { type: 'SET_VOLUME'; value: number }
   | { type: 'SET_BASS'; value: number }
-  | { type: 'SET_SURROUND'; value: boolean }
-  | { type: 'SET_SURROUND_POSITIONS'; value: { angle: number; elevation: number }[] }
+
   | { type: 'SET_EIGHT_D_ENABLED'; value: boolean }
   | { type: 'SET_EIGHT_D_AUTO_ROTATE'; value: boolean }
   | { type: 'SET_EIGHT_D_ROTATION_SPEED'; value: number }
