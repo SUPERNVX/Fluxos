@@ -14,6 +14,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_DURATION': return { ...state, duration: action.value };
     case 'SET_SPEED': return { ...state, speed: action.value };
     case 'SET_REVERB': return { ...state, reverb: action.value };
+    case 'SET_REVERB_TYPE': return { ...state, reverbType: action.value };
     case 'SET_VOLUME': return { ...state, volume: action.value };
     case 'SET_BASS': return { ...state, bass: action.value };
 
@@ -189,7 +190,8 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'RESET': return {
       isPlaying: false, progress: 0, currentTime: 0, duration: 0,
       speed: AUDIO_CONFIG.DEFAULT_SPEED, 
-      reverb: AUDIO_CONFIG.DEFAULT_REVERB, 
+      reverb: AUDIO_CONFIG.DEFAULT_REVERB,
+      reverbType: 'default',
       volume: AUDIO_CONFIG.DEFAULT_VOLUME,
       bass: AUDIO_CONFIG.DEFAULT_BASS,
       eightD: {

@@ -23,6 +23,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     duration: 0,
     speed: AUDIO_CONFIG.DEFAULT_SPEED,
     reverb: AUDIO_CONFIG.DEFAULT_REVERB,
+    reverbType: 'default',
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
     bass: AUDIO_CONFIG.DEFAULT_BASS,
     eightD: {
@@ -64,15 +65,43 @@ export const useAudioPlayer = (audioFile: File | null) => {
   const animationFrameRef = useRef<number>(0);
   const eightDAngleRef = useRef(0); // Para animação automática do 8D
 
-  const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext) => {
-    const { REVERB_IMPULSE_DURATION: duration, REVERB_IMPULSE_DECAY: decay } = AUDIO_CONFIG;
+  const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext, reverbType: 'default' | 'hall' | 'room' | 'plate' = 'default') => {
+    let duration, decay;
+    
+    switch(reverbType) {
+      case 'hall':
+        duration = 3.0; // Longer for concert hall
+        decay = 4.0;   // More pronounced decay
+        break;
+      case 'room':
+        duration = 1.0; // Shorter for room
+        decay = 2.0;   // Less decay
+        break;
+      case 'plate':
+        duration = 2.0; // Medium duration
+        decay = 3.0;   // Dense decay for plate-like effect
+        break;
+      default:
+        duration = AUDIO_CONFIG.REVERB_IMPULSE_DURATION;
+        decay = AUDIO_CONFIG.REVERB_IMPULSE_DECAY;
+    }
+    
     const length = context.sampleRate * duration;
     const impulse = context.createBuffer(2, length, context.sampleRate);
     
     for (let channel = 0; channel < 2; channel++) {
       const data = impulse.getChannelData(channel);
       for (let i = 0; i < length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        // Add some variation based on reverb type to simulate different acoustic characteristics
+        let value = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        
+        // For plate reverb, add some more metallic/dense characteristics
+        if (reverbType === 'plate') {
+          // Add some harmonics and reflections to simulate plate reverb
+          value *= 1.0 + 0.3 * Math.sin(i * 0.02);
+        }
+        
+        data[i] = value;
       }
     }
     return impulse;
@@ -140,7 +169,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     mainGain.gain.value = state.volume / 100;
     
     const convolver = ctx.createConvolver();
-    convolver.buffer = createImpulseResponse(ctx);
+    convolver.buffer = createImpulseResponse(ctx, state.reverbType);
     
     const wetGain = ctx.createGain();
     const dryGain = ctx.createGain();
@@ -414,7 +443,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       mainGain.gain.value = state.volume / 100;
 
       const convolver = offlineCtx.createConvolver();
-      convolver.buffer = createImpulseResponse(offlineCtx);
+      convolver.buffer = createImpulseResponse(offlineCtx, state.reverbType);
 
       const wetGain = offlineCtx.createGain();
       const dryGain = offlineCtx.createGain();
@@ -581,7 +610,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       nodesRef.current.wetGain.gain.setValueAtTime(wet, audioContextRef.current.currentTime);
       nodesRef.current.dryGain.gain.setValueAtTime(1 - wet, audioContextRef.current.currentTime);
     }
-  }, [state.reverb]);
+  }, [state.reverb, state.reverbType]);
 
   useEffect(() => {
     if (nodesRef.current.mainGain && audioContextRef.current) {
@@ -735,6 +764,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     download,
     setSpeed: (value: number) => dispatch({ type: 'SET_SPEED', value }),
     setReverb: (value: number) => dispatch({ type: 'SET_REVERB', value }),
+    setReverbType: (value: 'default' | 'hall' | 'room' | 'plate') => dispatch({ type: 'SET_REVERB_TYPE', value }),
     setVolume: (value: number) => dispatch({ type: 'SET_VOLUME', value }),
     setBass: (value: number) => dispatch({ type: 'SET_BASS', value }),
 

@@ -267,47 +267,86 @@ export const createWaveShaper = (context: AudioContext, amount: number, type: 'o
   };
 };
 
-// Função para criar bitcrusher usando WaveShaper (mais moderno)
+// Função para criar bitcrusher verdadeiro com redução de bits e taxa de amostragem
 export const createBitCrusher = (context: AudioContext, bits: number, sampleRate: number) => {
-  const waveshaper = context.createWaveShaper();
+  // Nó de entrada
   const inputGain = context.createGain();
+  
+  // Nó para controlar a taxa de amostragem
+  const processor = context.createScriptProcessor(4096, 2, 2);
+  
+  // Nó para controlar a resolução de bits
+  const waveshaper = context.createWaveShaper();
+  
+  // Nó de saída
   const outputGain = context.createGain();
   
+  // Parâmetros
+  let currentBits = bits;
+  let currentSampleRate = sampleRate;
+  let counter = 0;
+  let lastValues = [0, 0]; // Para os dois canais (estéreo)
+
+  // Função para criar a curva de bitcrushing
   const createBitcrushCurve = (bits: number, samples: number = 44100) => {
     const curve = new Float32Array(samples);
-    const step = Math.pow(2, bits - 1);
-    
+    const step = Math.pow(2, bits) - 1; // Número de passos baseado nos bits
+
     for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1;
-      // Simula redução de bits
+      const x = (i * 2) / samples - 1; 
+      // Redução de resolução de bits
       curve[i] = Math.round(x * step) / step;
     }
     return curve;
   };
 
-  const updateCurve = () => {
-    waveshaper.curve = createBitcrushCurve(bits);
-    // Simula redução de sample rate através de ganho
-    const reduction = sampleRate / context.sampleRate;
-    inputGain.gain.setValueAtTime(reduction, context.currentTime);
+  // Atualiza o efeito
+  const updateEffect = () => {
+    waveshaper.curve = createBitcrushCurve(currentBits);
   };
 
-  updateCurve();
-  waveshaper.oversample = 'none';
+  // Configura o ScriptProcessor para reduzir a taxa de amostragem
+  processor.onaudioprocess = (audioProcessingEvent) => {
+    const inputData = audioProcessingEvent.inputBuffer;
+    const outputData = audioProcessingEvent.outputBuffer;
 
-  inputGain.connect(waveshaper);
+    // Processa cada canal
+    for (let channel = 0; channel < outputData.numberOfChannels; channel++) {
+      const inputDataChannel = inputData.getChannelData(channel);
+      const outputDataChannel = outputData.getChannelData(channel);
+
+      for (let i = 0; i < outputData.length; i++) {
+        counter++;
+        
+        // Aplica redução de taxa de amostragem
+        if (counter >= context.sampleRate / currentSampleRate) {
+          lastValues[channel] = inputDataChannel[i];
+          counter = 0;
+        }
+        
+        // Aplica ao output
+        outputDataChannel[i] = lastValues[channel];
+      }
+    }
+  };
+
+  // Conecta os nós
+  inputGain.connect(processor);
+  processor.connect(waveshaper);
   waveshaper.connect(outputGain);
+
+  // Inicializa
+  updateEffect();
 
   return {
     input: inputGain,
     output: outputGain,
     updateBits: (b: number) => {
-      bits = b;
-      updateCurve();
+      currentBits = b;
+      updateEffect();
     },
     updateSampleRate: (sr: number) => {
-      sampleRate = sr;
-      updateCurve();
+      currentSampleRate = sr;
     }
   };
 };

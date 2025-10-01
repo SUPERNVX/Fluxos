@@ -11,6 +11,7 @@ export type AudioState = {
   duration: number;
   speed: number;
   reverb: number;
+  reverbType: 'default' | 'hall' | 'room' | 'plate';
   volume: number;
   bass: number;
 
@@ -87,6 +88,7 @@ export type AudioAction =
   | { type: 'SET_DURATION'; value: number }
   | { type: 'SET_SPEED'; value: number }
   | { type: 'SET_REVERB'; value: number }
+  | { type: 'SET_REVERB_TYPE'; value: 'default' | 'hall' | 'room' | 'plate' }
   | { type: 'SET_VOLUME'; value: number }
   | { type: 'SET_BASS'; value: number }
 
