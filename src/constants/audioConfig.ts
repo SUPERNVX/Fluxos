@@ -68,6 +68,12 @@ export const DEFAULT_DISTORTION = {
 } as const;
 
 
+// Valores padrão para efeito muffled
+export const DEFAULT_MUFFLED = {
+  enabled: false,
+  intensity: 50, // %
+} as const;
+
 // Valores padrão para áudio espacial
 export const DEFAULT_SPATIAL_AUDIO = {
   binaural: {

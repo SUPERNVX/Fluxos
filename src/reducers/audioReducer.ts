@@ -3,7 +3,8 @@ import {
   AUDIO_CONFIG, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO 
+  DEFAULT_SPATIAL_AUDIO,
+  DEFAULT_MUFFLED
 } from '../constants/audioConfig';
 
 export const audioReducer = (state: AudioState, action: AudioAction): AudioState => {
@@ -154,6 +155,14 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       ...state, 
       distortion: { ...state.distortion, fuzz: { ...state.distortion.fuzz, gate: action.value } } 
     };
+    case 'SET_MUFFLED_ENABLED': return { 
+      ...state, 
+      muffled: { ...state.muffled, enabled: action.value } 
+    };
+    case 'SET_MUFFLED_INTENSITY': return { 
+      ...state, 
+      muffled: { ...state.muffled, intensity: action.value } 
+    };
     
     // Spatial Audio
     case 'SET_BINAURAL_ENABLED': return { 
@@ -186,6 +195,10 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       ...state,
       spatialAudio: { ...DEFAULT_SPATIAL_AUDIO }
     };
+    case 'RESET_MUFFLED_EFFECTS': return {
+      ...state,
+      muffled: { ...DEFAULT_MUFFLED },
+    };
     
     case 'RESET': return {
       isPlaying: false, progress: 0, currentTime: 0, duration: 0,
@@ -194,6 +207,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       reverbType: 'default',
       volume: AUDIO_CONFIG.DEFAULT_VOLUME,
       bass: AUDIO_CONFIG.DEFAULT_BASS,
+      muffled: { ...DEFAULT_MUFFLED },
       eightD: {
         enabled: false,
         autoRotate: true,

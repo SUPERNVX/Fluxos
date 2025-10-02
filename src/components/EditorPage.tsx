@@ -14,6 +14,7 @@ import { EightDControls } from './EightDControls';
 import { ModulationControls } from './ModulationControls';
 import { DistortionControls } from './DistortionControls';
 import { SpatialAudioControls } from './SpatialAudioControls';
+import { MuffledControls } from './MuffledControls';
 
 import { SettingsIcon, DownloadIcon } from './Icons';
 import { AUDIO_CONFIG } from '../constants/audioConfig';
@@ -40,8 +41,8 @@ export const EditorPage = memo<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass, eightD } = player;
-    savePreset(name, { speed, reverb, volume, bass, eightD });
+    const { speed, reverb, volume, bass, eightD, muffled } = player;
+    savePreset(name, { speed, reverb, volume, bass, eightD, muffled });
   };
 
   const handleLoadPreset = (settings: any) => {
@@ -53,6 +54,10 @@ export const EditorPage = memo<{
     player.setEightDAutoRotate(settings.eightD.autoRotate);
     player.setEightDRotationSpeed(settings.eightD.rotationSpeed);
     player.setEightDManualPosition(settings.eightD.manualPosition);
+    if (settings.muffled) {
+      player.setMuffledEnabled(settings.muffled.enabled);
+      player.setMuffledIntensity(settings.muffled.intensity);
+    }
     setIsSettingsOpen(false);
   };
 
@@ -248,6 +253,16 @@ export const EditorPage = memo<{
                 setEightDAutoRotate={player.setEightDAutoRotate}
                 setEightDRotationSpeed={player.setEightDRotationSpeed}
                 setEightDManualPosition={player.setEightDManualPosition}
+              />
+            </div>
+
+            {/* Muffled Effect */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <MuffledControls 
+                muffled={player.muffled}
+                setMuffledEnabled={player.setMuffledEnabled}
+                setMuffledIntensity={player.setMuffledIntensity}
+                resetMuffledEffects={player.resetMuffledEffects}
               />
             </div>
 
