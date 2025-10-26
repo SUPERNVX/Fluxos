@@ -12,20 +12,24 @@ export const Slider = memo<{
 }>(({ label, value, onChange, min, max, step, unit }) => {
   const onPointerDown = useSliderTouchLock();
   const percentage = ((value - min) / (max - min)) * 100;
-  const displayValue = label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(label === 'Speed' ? 1 : 0);
+  const displayValue = (value != null && value !== undefined) 
+    ? (label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(label === 'Speed' ? 1 : 0))
+    : '0';
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
         <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{label}</label>
-        <span className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">{displayValue}{unit}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
+          {value != null && value !== undefined ? displayValue : '0'}{unit}
+        </span>
       </div>
       <input
         type="range"
         min={min}
         max={max}
         step={step}
-        value={value}
+        value={value != null && value !== undefined ? value : 0}
         onPointerDown={onPointerDown}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer slider-thumb"

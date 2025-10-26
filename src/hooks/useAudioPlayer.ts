@@ -217,7 +217,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     const bassBoost = ctx.createBiquadFilter();
     bassBoost.type = 'lowshelf';
     bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(0, 0); // Start with neutral gain, will be updated in real-time
+    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0); // Initialize with current bass value
 
     // Salva referências
     audioNodesRef.current = {
@@ -309,8 +309,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
     const bassBoost = ctx.createBiquadFilter();
     bassBoost.type = 'lowshelf';
     bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    // Initially set to neutral gain, will be updated in real-time
-    bassBoost.gain.setValueAtTime(0, 0);
+    // Initialize with current bass value
+    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
 
     // Conecta os nós básicos - this is the main signal path
     source.connect(dryGain);
@@ -486,8 +486,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
       currentNode = audioNodesRef.current.eightDPanner;
     }
 
-    // Conecta ao destino final
-    currentNode.connect(ctx.destination);
+    // Conecta o bass boost no final da cadeia de efeitos
+    currentNode.connect(bassBoost);
+    // Conecta o bass boost ao destino final
+    bassBoost.connect(ctx.destination);
 
     // Atualiza referências de nós
     audioNodesRef.current = { 
@@ -920,7 +922,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.mainGain.gain.setValueAtTime(state.volume / 100, audioContextRef.current.currentTime);
     }
     
-    if (audioNodesRef.current.bassBoost && audioContextRef.current) {
+    if (audioNodesRef.current.bassBoost && audioContextRef.current && state.bass != null) {
       audioNodesRef.current.bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, audioContextRef.current.currentTime);
     }
     
@@ -1005,7 +1007,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
     
     // Atualizações em tempo real para efeito muffled
-    if (audioNodesRef.current.muffledFilter && audioContextRef.current) {
+    if (audioNodesRef.current.muffledFilter && audioContextRef.current && state.muffled?.intensity != null) {
       // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
       const minFreq = 200;  // Frequência mínima quando intensidade é 100%
       const maxFreq = 8000; // Frequência máxima quando intensidade é 0%

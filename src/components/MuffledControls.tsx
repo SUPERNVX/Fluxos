@@ -40,7 +40,7 @@ export const MuffledControls = memo<MuffledControlsProps>(({
         <div className="ml-4 space-y-2">
           <Slider 
             label="Intensity" 
-            value={muffled.intensity} 
+            value={muffled.intensity != null ? muffled.intensity : 50} 
             onChange={setMuffledIntensity} 
             min={0} 
             max={100} 

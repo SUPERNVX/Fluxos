@@ -104,3 +104,23 @@ React's useCallback hooks were recreating functions when dependencies changed, w
 - **Performance**: Reduced CPU usage through optimized audio graph handling
 - **Code Quality**: Better separation of concerns and maintainable architecture
 - **Technical Debt**: Eliminated potential future issues by addressing root causes
+
+---
+
+## Problem 4: Bass Boost Effect Not Applied
+
+### Issue Description
+The bass boost slider would update visually, but the audio effect was not applied to the output signal. Changing the bass boost value from 0% to 100% had no audible impact on the audio.
+
+### Technical Analysis
+**Root Cause:** The bass boost filter was created and initialized properly in the audio graph setup, but was never connected to the audio signal chain. The filter existed in memory with correct parameters but audio signals bypassed it completely.
+
+### Solution Implemented
+Connected the bass boost filter in the proper position within the audio signal chain in the `setupAudioGraph` function:
+- Changed from: `currentNode.connect(ctx.destination)`  
+- To: `currentNode.connect(bassBoost); bassBoost.connect(ctx.destination)`
+
+### Result
+- Bass boost effect now properly applies to audio output
+- Slider value changes produce audible changes in low-frequency content
+- Effect integrates correctly with other audio processing in the signal chain
