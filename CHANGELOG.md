@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2025-10-25
+
+### Fixed
+
+- **Audio Parameter Updates**: Fixed bug where changing reverb, volume, or bass sliders would restart music playback instead of updating in real-time
+- **Reverb Type Switching**: Implemented multiple convolver system allowing real-time reverb type switching (hall/room/plate/default) without audio restart
+- **UI State Synchronization**: Resolved issue where UI would show paused state and 00:00 time after parameter changes while audio continued playing
+- **Dependency Optimization**: Optimized useCallback dependency arrays to prevent unnecessary function recreations during real-time parameter updates
+- **Real-time Parameter Handling**: Enhanced real-time update system to properly handle all audio parameters without graph reconstruction
+
+### Technical Improvements
+
+- **Multiple Convolver Architecture**: Implemented parallel convolver system with dedicated gain nodes for immediate reverb type switching
+- **Graph Reconstruction Prevention**: Optimized audio graph setup to only rebuild when necessary (effect enable/disable) not parameter changes
+- **State Management**: Improved audio state synchronization between real-time updates and UI components
+- **Performance**: Reduced unnecessary audio graph rebuilds resulting in smoother parameter transitions
+
 ## [2.2.0] - 2025-10-24
 
 ### Added

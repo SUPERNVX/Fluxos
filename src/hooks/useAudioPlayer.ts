@@ -184,34 +184,71 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
     // Cria os nós de efeito básico
     const mainGain = ctx.createGain();
-    mainGain.gain.value = state.volume / 100;
+    mainGain.gain.value = 1; // Will be updated in real-time update effect
     
-    const convolver = ctx.createConvolver();
-    convolver.buffer = createImpulseResponse(ctx, state.reverbType);
+    // Cria convolvers para cada tipo de reverb
+    const defaultConvolver = ctx.createConvolver();
+    defaultConvolver.buffer = createImpulseResponse(ctx, 'default');
     
-    const wetGain = ctx.createGain();
+    const hallConvolver = ctx.createConvolver();
+    hallConvolver.buffer = createImpulseResponse(ctx, 'hall');
+    
+    const roomConvolver = ctx.createConvolver();
+    roomConvolver.buffer = createImpulseResponse(ctx, 'room');
+    
+    const plateConvolver = ctx.createConvolver();
+    plateConvolver.buffer = createImpulseResponse(ctx, 'plate');
+    
+    // Cria ganhos para cada tipo de reverb para permitir switching em tempo real
+    const defaultReverbGain = ctx.createGain();
+    const hallReverbGain = ctx.createGain();
+    const roomReverbGain = ctx.createGain();
+    const plateReverbGain = ctx.createGain();
+    
+    // Set initial values to 0, will be updated in real-time update effect
+    defaultReverbGain.gain.value = 0;
+    hallReverbGain.gain.value = 0;
+    roomReverbGain.gain.value = 0;
+    plateReverbGain.gain.value = 0;
+    
     const dryGain = ctx.createGain();
-    const wetValue = state.reverb / 100;
-    wetGain.gain.value = wetValue;
-    dryGain.gain.value = 1 - wetValue;
+    dryGain.gain.value = 1; // Will be updated in real-time update effect
 
     const bassBoost = ctx.createBiquadFilter();
     bassBoost.type = 'lowshelf';
     bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
+    bassBoost.gain.setValueAtTime(0, 0); // Start with neutral gain, will be updated in real-time
 
     // Salva referências
     audioNodesRef.current = {
       ...audioNodesRef.current,
-      convolver,
-      wetGain,
+      defaultConvolver,
+      hallConvolver,
+      roomConvolver,
+      plateConvolver,
+      defaultReverbGain,
+      hallReverbGain,
+      roomReverbGain,
+      plateReverbGain,
       dryGain,
       mainGain,
       bassBoost
     };
 
-    return { mainGain, convolver, wetGain, dryGain, bassBoost };
-  }, [state.volume, state.reverb, state.reverbType, state.bass, createImpulseResponse]);
+    return { 
+      mainGain, 
+      defaultConvolver,
+      hallConvolver,
+      roomConvolver,
+      plateConvolver,
+      defaultReverbGain,
+      hallReverbGain,
+      roomReverbGain,
+      plateReverbGain,
+      dryGain, 
+      bassBoost 
+    };
+  }, [createImpulseResponse]); // Only depend on createImpulseResponse, not state values
 
 
 
@@ -238,32 +275,66 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
     // Cria os nós de efeito básico
     const mainGain = ctx.createGain();
-    mainGain.gain.value = state.volume / 100;
+    // Inicialmente set to neutral value, will be updated in real-time effect
+    mainGain.gain.value = 1; // Will be updated in real-time
     
-    const convolver = ctx.createConvolver();
-    convolver.buffer = createImpulseResponse(ctx, state.reverbType);
+    // Cria convolvers para cada tipo de reverb
+    const defaultConvolver = ctx.createConvolver();
+    defaultConvolver.buffer = createImpulseResponse(ctx, 'default');
     
-    const wetGain = ctx.createGain();
+    const hallConvolver = ctx.createConvolver();
+    hallConvolver.buffer = createImpulseResponse(ctx, 'hall');
+    
+    const roomConvolver = ctx.createConvolver();
+    roomConvolver.buffer = createImpulseResponse(ctx, 'room');
+    
+    const plateConvolver = ctx.createConvolver();
+    plateConvolver.buffer = createImpulseResponse(ctx, 'plate');
+    
+    // Cria ganhos para cada tipo de reverb para permitir switching em tempo real
+    const defaultReverbGain = ctx.createGain();
+    const hallReverbGain = ctx.createGain();
+    const roomReverbGain = ctx.createGain();
+    const plateReverbGain = ctx.createGain();
+    
+    // Inicialmente set all to 0, will be updated in real-time effect
+    defaultReverbGain.gain.value = 0;
+    hallReverbGain.gain.value = 0;
+    roomReverbGain.gain.value = 0;
+    plateReverbGain.gain.value = 0;
+    
     const dryGain = ctx.createGain();
-    const wetValue = state.reverb / 100;
-    wetGain.gain.value = wetValue;
-    dryGain.gain.value = 1 - wetValue;
+    dryGain.gain.value = 1; // Will be updated in real-time
 
     const bassBoost = ctx.createBiquadFilter();
     bassBoost.type = 'lowshelf';
     bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
+    // Initially set to neutral gain, will be updated in real-time
+    bassBoost.gain.setValueAtTime(0, 0);
 
     // Conecta os nós básicos - this is the main signal path
     source.connect(dryGain);
-    source.connect(wetGain);
-    wetGain.connect(convolver);
+    // Connect source to each reverb path
+    source.connect(defaultReverbGain);
+    source.connect(hallReverbGain);
+    source.connect(roomReverbGain);
+    source.connect(plateReverbGain);
+    
+    // Conecta os convolvers
+    defaultReverbGain.connect(defaultConvolver);
+    hallReverbGain.connect(hallConvolver);
+    roomReverbGain.connect(roomConvolver);
+    plateReverbGain.connect(plateConvolver);
+    
+    // Conecta todos os convolvers ao gain principal
+    defaultConvolver.connect(mainGain);
+    hallConvolver.connect(mainGain);
+    roomConvolver.connect(mainGain);
+    plateConvolver.connect(mainGain);
     dryGain.connect(mainGain);
-    convolver.connect(mainGain);
-    mainGain.connect(bassBoost);
-
+    
     // Inicializa com o nó básico
-    let currentNode: AudioNode = bassBoost;
+    let currentNode: AudioNode = mainGain; // mainGain já é o ponto de mistura agora
     
     // Função auxiliar para conectar efeitos
     const connectEffect = (inputNode: AudioNode, effect: any, effectName: keyof AudioNodes) => {
@@ -421,9 +492,15 @@ export const useAudioPlayer = (audioFile: File | null) => {
     // Atualiza referências de nós
     audioNodesRef.current = { 
       ...audioNodesRef.current, 
-      convolver, 
-      wetGain, 
-      dryGain, 
+      defaultConvolver,
+      hallConvolver,
+      roomConvolver,
+      plateConvolver,
+      defaultReverbGain,
+      hallReverbGain,
+      roomReverbGain,
+      plateReverbGain,
+      dryGain,
       mainGain, 
       bassBoost 
     };
@@ -437,11 +514,23 @@ export const useAudioPlayer = (audioFile: File | null) => {
     
     return source;
   }, [
-    state.speed, state.reverb, state.reverbType, state.volume, state.bass, 
-    state.muffled.enabled, state.muffled.intensity,
+    // Only include state properties that change the graph structure (enable/disable states)
+    state.muffled.enabled,
     state.eightD.enabled,
-    state.modulation, state.distortion, state.spatialAudio,
-    createImpulseResponse, createEightDPanner
+    state.spatialAudio.binaural.enabled,
+    // Include modulation effect enables
+    state.modulation.flanger.enabled,
+    state.modulation.phaser.enabled,
+    state.modulation.tremolo.enabled,
+    // Include distortion effect enables  
+    state.distortion.overdrive.enabled,
+    state.distortion.distortion.enabled,
+    state.distortion.bitcrusher.enabled,
+    state.distortion.fuzz.enabled,
+    // Include the speed for the source node
+    state.speed,
+    createImpulseResponse, 
+    createEightDPanner
   ]);
 
   const play = useCallback(() => {
@@ -526,14 +615,33 @@ export const useAudioPlayer = (audioFile: File | null) => {
       const mainGain = offlineCtx.createGain();
       mainGain.gain.value = state.volume / 100;
 
-      const convolver = offlineCtx.createConvolver();
-      convolver.buffer = createImpulseResponse(offlineCtx, state.reverbType);
-
-      const wetGain = offlineCtx.createGain();
+      // Create convolvers for each reverb type
+      const defaultConvolver = offlineCtx.createConvolver();
+      defaultConvolver.buffer = createImpulseResponse(offlineCtx, 'default');
+      
+      const hallConvolver = offlineCtx.createConvolver();
+      hallConvolver.buffer = createImpulseResponse(offlineCtx, 'hall');
+      
+      const roomConvolver = offlineCtx.createConvolver();
+      roomConvolver.buffer = createImpulseResponse(offlineCtx, 'room');
+      
+      const plateConvolver = offlineCtx.createConvolver();
+      plateConvolver.buffer = createImpulseResponse(offlineCtx, 'plate');
+      
+      // Create gains for each reverb type
+      const defaultReverbGain = offlineCtx.createGain();
+      const hallReverbGain = offlineCtx.createGain();
+      const roomReverbGain = offlineCtx.createGain();
+      const plateReverbGain = offlineCtx.createGain();
+      
+      // Set gains based on current reverb type
+      defaultReverbGain.gain.value = state.reverbType === 'default' ? state.reverb / 100 : 0;
+      hallReverbGain.gain.value = state.reverbType === 'hall' ? state.reverb / 100 : 0;
+      roomReverbGain.gain.value = state.reverbType === 'room' ? state.reverb / 100 : 0;
+      plateReverbGain.gain.value = state.reverbType === 'plate' ? state.reverb / 100 : 0;
+      
       const dryGain = offlineCtx.createGain();
-      const wetValue = state.reverb / 100;
-      wetGain.gain.value = wetValue;
-      dryGain.gain.value = 1 - wetValue;
+      dryGain.gain.value = 1 - state.reverb / 100;
 
       const bassBoost = offlineCtx.createBiquadFilter();
       bassBoost.type = 'lowshelf';
@@ -542,10 +650,22 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
       // Connect basic nodes
       source.connect(dryGain);
-      source.connect(wetGain);
-      wetGain.connect(convolver);
+      source.connect(defaultReverbGain);
+      source.connect(hallReverbGain);
+      source.connect(roomReverbGain);
+      source.connect(plateReverbGain);
+      
+      defaultReverbGain.connect(defaultConvolver);
+      hallReverbGain.connect(hallConvolver);
+      roomReverbGain.connect(roomConvolver);
+      plateReverbGain.connect(plateConvolver);
+      
+      defaultConvolver.connect(mainGain);
+      hallConvolver.connect(mainGain);
+      roomConvolver.connect(mainGain);
+      plateConvolver.connect(mainGain);
       dryGain.connect(mainGain);
-      convolver.connect(mainGain);
+      
       mainGain.connect(bassBoost);
       bassBoost.connect(offlineCtx.destination);
 
@@ -762,10 +882,38 @@ export const useAudioPlayer = (audioFile: File | null) => {
       sourceNodeRef.current.playbackRate.setValueAtTime(state.speed, audioContextRef.current.currentTime);
     }
     
-    if (audioNodesRef.current.wetGain && audioNodesRef.current.dryGain && audioContextRef.current) {
-      const wet = state.reverb / 100;
-      audioNodesRef.current.wetGain.gain.setValueAtTime(wet, audioContextRef.current.currentTime);
-      audioNodesRef.current.dryGain.gain.setValueAtTime(1 - wet, audioContextRef.current.currentTime);
+    // Real-time reverb type switching using gain nodes
+    if (audioNodesRef.current.defaultReverbGain && 
+        audioNodesRef.current.hallReverbGain && 
+        audioNodesRef.current.roomReverbGain && 
+        audioNodesRef.current.plateReverbGain && 
+        audioNodesRef.current.dryGain && 
+        audioNodesRef.current.mainGain &&
+        audioContextRef.current) {
+      
+      // Set the appropriate reverb path to the current reverb value and others to 0
+      audioNodesRef.current.defaultReverbGain.gain.setValueAtTime(
+        state.reverbType === 'default' ? state.reverb / 100 : 0, 
+        audioContextRef.current.currentTime
+      );
+      audioNodesRef.current.hallReverbGain.gain.setValueAtTime(
+        state.reverbType === 'hall' ? state.reverb / 100 : 0, 
+        audioContextRef.current.currentTime
+      );
+      audioNodesRef.current.roomReverbGain.gain.setValueAtTime(
+        state.reverbType === 'room' ? state.reverb / 100 : 0, 
+        audioContextRef.current.currentTime
+      );
+      audioNodesRef.current.plateReverbGain.gain.setValueAtTime(
+        state.reverbType === 'plate' ? state.reverb / 100 : 0, 
+        audioContextRef.current.currentTime
+      );
+      
+      // Update dry path accordingly
+      audioNodesRef.current.dryGain.gain.setValueAtTime(
+        1 - (state.reverb / 100), 
+        audioContextRef.current.currentTime
+      );
     }
     
     if (audioNodesRef.current.mainGain && audioContextRef.current) {
@@ -880,7 +1028,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       }
     }
   }, [
-    state.speed, state.reverb, state.volume, state.bass,
+    state.speed, state.reverb, state.reverbType, state.volume, state.bass,
     state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
     state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback,
     state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
@@ -889,8 +1037,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
     state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
     state.muffled.intensity,
-    state.spatialAudio.binaural.width,
-    state.reverbType
+    state.spatialAudio.binaural.width
   ]);
 
 

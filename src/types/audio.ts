@@ -152,8 +152,14 @@ export interface FuzzEffect {
 }
 
 export type AudioNodes = {
-  convolver?: ConvolverNode;
-  wetGain?: GainNode;
+  defaultConvolver?: ConvolverNode;
+  hallConvolver?: ConvolverNode;
+  roomConvolver?: ConvolverNode;
+  plateConvolver?: ConvolverNode;
+  defaultReverbGain?: GainNode;
+  hallReverbGain?: GainNode;
+  roomReverbGain?: GainNode;
+  plateReverbGain?: GainNode;
   dryGain?: GainNode;
   mainGain?: GainNode;
   bassBoost?: BiquadFilterNode;
