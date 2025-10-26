@@ -11,8 +11,10 @@ export const Slider = memo<{
   unit: string;
 }>(({ label, value, onChange, min, max, step, unit }) => {
   const onPointerDown = useSliderTouchLock();
-  const percentage = ((value - min) / (max - min)) * 100;
-  const displayValue = (value != null && value !== undefined) 
+  const isValueValid = (value != null && value !== undefined && typeof value === 'number' && !isNaN(value));
+  const safeValue = isValueValid ? value : 0;
+  const percentage = ((safeValue - min) / (max - min)) * 100;
+  const displayValue = isValueValid
     ? (label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(label === 'Speed' ? 1 : 0))
     : '0';
 

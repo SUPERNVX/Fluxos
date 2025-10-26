@@ -439,23 +439,23 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
 
     // === EFEITO MUFFLED ===
-    if (state.muffled.enabled) {
-      const muffledFilter = ctx.createBiquadFilter();
-      muffledFilter.type = 'lowpass';
-      
-      // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
-      // Quanto maior a intensidade, menor a frequência de corte (mais abafado)
-      const minFreq = 200;  // Frequência mínima quando intensidade é 100%
-      const maxFreq = 8000; // Frequência máxima quando intensidade é 0%
-      const frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
-      
-      muffledFilter.frequency.setValueAtTime(Math.max(minFreq, Math.min(maxFreq, frequency)), ctx.currentTime);
-      muffledFilter.Q.setValueAtTime(1, ctx.currentTime); // Ressonância padrão
-      
-      currentNode.connect(muffledFilter);
-      currentNode = muffledFilter;
-      audioNodesRef.current.muffledFilter = muffledFilter;
-    }
+    // Sempre cria o filtro muffled para evitar reconstrução do grafo ao habilitar/desabilitar
+    const muffledFilter = ctx.createBiquadFilter();
+    muffledFilter.type = 'lowpass';
+    
+    // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
+    // Quanto maior a intensidade, menor a frequência de corte (mais abafado)
+    const minFreq = 200;  // Frequência mínima quando intensidade é 100%
+    const maxFreq = 8000; // Frequência máxima quando intensidade é 0%
+    const frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
+    
+    muffledFilter.frequency.setValueAtTime(Math.max(minFreq, Math.min(maxFreq, frequency)), ctx.currentTime);
+    muffledFilter.Q.setValueAtTime(1, ctx.currentTime); // Ressonância padrão
+    
+    // Conecta o filtro sempre, mas o estado de enabled controla se o efeito é ativo
+    currentNode.connect(muffledFilter);
+    currentNode = muffledFilter;
+    audioNodesRef.current.muffledFilter = muffledFilter;
 
     // === EFEITOS ESPACIAIS AVANÇADOS ===
 
@@ -1011,7 +1011,15 @@ export const useAudioPlayer = (audioFile: File | null) => {
       // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
       const minFreq = 200;  // Frequência mínima quando intensidade é 100%
       const maxFreq = 8000; // Frequência máxima quando intensidade é 0%
-      const frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
+      let frequency;
+      
+      if (state.muffled.enabled) {
+        // Quando enabled, aplica o cálculo normal
+        frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
+      } else {
+        // Quando disabled, mantém a frequência máxima (sem efeito muffled)
+        frequency = maxFreq; // Frequência alta = sem atenuação
+      }
       
       audioNodesRef.current.muffledFilter.frequency.setValueAtTime(
         Math.max(minFreq, Math.min(maxFreq, frequency)), 
@@ -1118,6 +1126,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [
     // Parâmetros que afetam a conexão do grafo (enable/disabled states)
+    // NOTA: muffled.enabled foi removido porque o filtro muffled agora é sempre conectado
     state.modulation.flanger.enabled,
     state.modulation.phaser.enabled,
     state.modulation.tremolo.enabled,
@@ -1125,7 +1134,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.distortion.enabled,
     state.distortion.bitcrusher.enabled,
     state.distortion.fuzz.enabled,
-    state.muffled.enabled,
     state.spatialAudio.binaural.enabled,
     state.eightD.enabled,
     setupAudioGraph

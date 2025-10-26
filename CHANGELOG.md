@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3] - 2025-10-25
+
+### Fixed
+
+- **Muffled Effect Crash**: Fixed muffled effect causing crashes by correcting reducer logic for muffled state updates
+- **State Structure Corruption**: Resolved issue where muffled state was becoming malformed during toggle operations
+- **Audio Graph Stability**: Prevented unnecessary audio graph reconstruction when toggling muffled effect
+- **Slider Component Robustness**: Enhanced type checking to handle undefined values safely
+
+### Technical Improvements
+
+- **Reducer Accuracy**: Corrected updateEffect usage for simple property updates in audio reducer
+- **Signal Chain Consistency**: Maintained muffled filter in signal chain without removal/reconstruction
+- **State Integrity**: Preserved proper muffled object structure during all state transitions
+- **Performance**: Eliminated audio graph rebuilds for muffled enable/disable operations
+
 ## [2.2.2] - 2025-10-25
 
 ### Fixed

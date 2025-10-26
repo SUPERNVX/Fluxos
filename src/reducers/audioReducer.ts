@@ -127,9 +127,21 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       
     // Muffled effect
     case 'SET_MUFFLED_ENABLED':
-      return updateEffect(state, 'muffled', 'enabled', { enabled: action.value });
+      return {
+        ...state,
+        muffled: {
+          ...state.muffled,
+          enabled: action.value
+        }
+      };
     case 'SET_MUFFLED_INTENSITY':
-      return updateEffect(state, 'muffled', 'intensity', { intensity: action.value });
+      return {
+        ...state,
+        muffled: {
+          ...state.muffled,
+          intensity: action.value
+        }
+      };
     
     // Spatial Audio
     case 'SET_BINAURAL_ENABLED':

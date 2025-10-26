@@ -124,3 +124,28 @@ Connected the bass boost filter in the proper position within the audio signal c
 - Bass boost effect now properly applies to audio output
 - Slider value changes produce audible changes in low-frequency content
 - Effect integrates correctly with other audio processing in the signal chain
+
+---
+
+## Problem 5: Muffled Effect Causing Application Crashes
+
+### Issue Description
+Enabling the muffled effect would cause the entire application to crash with the error `value.toFixed is not a function`, resulting in a blank screen showing only background color.
+
+### Technical Analysis
+**Root Cause:** Incorrect usage of the `updateEffect` helper function in the audio reducer. The function was designed for updating nested objects but was incorrectly applied to simple properties like `enabled` (boolean) and `intensity` (number). This corrupted the muffled state structure during toggle operations.
+
+### Solution Implemented
+Replaced incorrect reducer logic with proper state updates that maintain the correct object structure:
+- Changed from: `updateEffect(state, 'muffled', 'enabled', { enabled: action.value })`
+- To: Direct state spreading that preserves muffled object structure
+
+### Additional Improvements
+- Prevented unnecessary audio graph reconstruction when toggling muffled effect
+- Enhanced Slider component with defensive type checking
+- Maintained muffled filter in signal chain to avoid connection/disconnection issues
+
+### Result
+- Muffled effect toggling no longer crashes the application
+- State structure remains properly formatted during all operations
+- Application maintains stability during muffled effect enable/disable
