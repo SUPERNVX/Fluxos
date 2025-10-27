@@ -75,11 +75,7 @@ export const DEFAULT_DISTORTION = {
   },
 } as const;
 
-// Valores padrão para efeito muffled
-export const DEFAULT_MUFFLED = {
-  enabled: false,
-  intensity: 50, // %
-} as const;
+
 
 // Valores padrão para áudio espacial
 export const DEFAULT_SPATIAL_AUDIO = {
@@ -189,14 +185,7 @@ export const AUDIO_EFFECT_LIMITS = {
     }
   },
   
-  // Muffled effect
-  MUFFLED: {
-    INTENSITY: {
-      MIN: 0,
-      MAX: 100,
-      STEP: 1
-    }
-  },
+
   
   // Spatial audio
   SPATIAL_AUDIO: {

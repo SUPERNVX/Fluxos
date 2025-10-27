@@ -17,9 +17,7 @@ export const setEightDAutoRotate = (value: boolean) => ({ type: 'SET_EIGHT_D_AUT
 export const setEightDRotationSpeed = (value: number) => ({ type: 'SET_EIGHT_D_ROTATION_SPEED', value } as const);
 export const setEightDManualPosition = (value: number) => ({ type: 'SET_EIGHT_D_MANUAL_POSITION', value } as const);
 
-// Muffled effect actions
-export const setMuffledEnabled = (value: boolean) => ({ type: 'SET_MUFFLED_ENABLED', value } as const);
-export const setMuffledIntensity = (value: number) => ({ type: 'SET_MUFFLED_INTENSITY', value } as const);
+
 
 // Modulation effect actions
 export const setFlangerEnabled = (value: boolean) => ({ type: 'SET_FLANGER_ENABLED', value } as const);
@@ -69,6 +67,6 @@ export const setBinauralWidth = (value: number) => ({ type: 'SET_BINAURAL_WIDTH'
 export const resetModulationEffects = () => ({ type: 'RESET_MODULATION_EFFECTS' } as const);
 export const resetDistortionEffects = () => ({ type: 'RESET_DISTORTION_EFFECTS' } as const);
 export const resetSpatialAudioEffects = () => ({ type: 'RESET_SPATIAL_AUDIO_EFFECTS' } as const);
-export const resetMuffledEffects = () => ({ type: 'RESET_MUFFLED_EFFECTS' } as const);
+
 export const resetAll = () => ({ type: 'RESET' } as const);
 export const newTrackReset = () => ({ type: 'NEW_TRACK_RESET' } as const);

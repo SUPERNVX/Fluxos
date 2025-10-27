@@ -4,7 +4,7 @@ export type Track = {
   coverUrl: string;
 };
 
-export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD' | 'muffled'>;
+export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD'>;
 
 export type AudioState = {
   isPlaying: boolean;
@@ -72,11 +72,7 @@ export type AudioState = {
       gate: number; // 0-100%
     };
   };
-  // Efeito Muffled (abafado)
-  muffled: {
-    enabled: boolean;
-    intensity: number; // 0-100%
-  };
+
   // Espacialização Avançada
   spatialAudio: {
     binaural: {
@@ -175,7 +171,7 @@ export type AudioNodes = {
     convolver: ConvolverNode;
     gain: GainNode;
   };
-  muffledFilter?: BiquadFilterNode;
+
 };
 
 export type AudioAction = 
@@ -224,9 +220,7 @@ export type AudioAction =
   | { type: 'SET_FUZZ_AMOUNT'; value: number }
   | { type: 'SET_FUZZ_TONE'; value: number }
   | { type: 'SET_FUZZ_GATE'; value: number }
-  // Muffled Effect Actions
-  | { type: 'SET_MUFFLED_ENABLED'; value: boolean }
-  | { type: 'SET_MUFFLED_INTENSITY'; value: number }
+
   // Spatial Audio Actions
   | { type: 'SET_BINAURAL_ENABLED'; value: boolean }
   | { type: 'SET_BINAURAL_ROOM_SIZE'; value: number }
@@ -235,6 +229,6 @@ export type AudioAction =
   | { type: 'RESET_MODULATION_EFFECTS' }
   | { type: 'RESET_DISTORTION_EFFECTS' }
   | { type: 'RESET_SPATIAL_AUDIO_EFFECTS' }
-  | { type: 'RESET_MUFFLED_EFFECTS' }
+
   | { type: 'RESET' }
   | { type: 'NEW_TRACK_RESET' };

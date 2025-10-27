@@ -3,8 +3,7 @@ import {
   AUDIO_CONFIG, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO,
-  DEFAULT_MUFFLED
+  DEFAULT_SPATIAL_AUDIO
 } from '../constants/audioConfig';
 
 // Helper function to update specific effect
@@ -48,15 +47,39 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_BASS': 
       return { ...state, bass: action.value };
 
-    // 8D Audio actions
+    // 8D Audio actions - Fixed to properly update simple properties
     case 'SET_EIGHT_D_ENABLED': 
-      return updateEffect(state, 'eightD', 'enabled', { enabled: action.value });
+      return {
+        ...state,
+        eightD: {
+          ...state.eightD,
+          enabled: action.value
+        }
+      };
     case 'SET_EIGHT_D_AUTO_ROTATE': 
-      return updateEffect(state, 'eightD', 'autoRotate', { autoRotate: action.value });
+      return {
+        ...state,
+        eightD: {
+          ...state.eightD,
+          autoRotate: action.value
+        }
+      };
     case 'SET_EIGHT_D_ROTATION_SPEED': 
-      return updateEffect(state, 'eightD', 'rotationSpeed', { rotationSpeed: action.value });
+      return {
+        ...state,
+        eightD: {
+          ...state.eightD,
+          rotationSpeed: action.value
+        }
+      };
     case 'SET_EIGHT_D_MANUAL_POSITION': 
-      return updateEffect(state, 'eightD', 'manualPosition', { manualPosition: action.value });
+      return {
+        ...state,
+        eightD: {
+          ...state.eightD,
+          manualPosition: action.value
+        }
+      };
     
     // Modulation Effects
     case 'SET_FLANGER_ENABLED':
@@ -125,23 +148,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_FUZZ_GATE':
       return updateEffect(state, 'distortion', 'fuzz', { gate: action.value });
       
-    // Muffled effect
-    case 'SET_MUFFLED_ENABLED':
-      return {
-        ...state,
-        muffled: {
-          ...state.muffled,
-          enabled: action.value
-        }
-      };
-    case 'SET_MUFFLED_INTENSITY':
-      return {
-        ...state,
-        muffled: {
-          ...state.muffled,
-          intensity: action.value
-        }
-      };
+
     
     // Spatial Audio
     case 'SET_BINAURAL_ENABLED':
@@ -160,8 +167,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return { ...state, distortion: { ...DEFAULT_DISTORTION } };
     case 'RESET_SPATIAL_AUDIO_EFFECTS':
       return { ...state, spatialAudio: { ...DEFAULT_SPATIAL_AUDIO } };
-    case 'RESET_MUFFLED_EFFECTS':
-      return { ...state, muffled: { ...DEFAULT_MUFFLED } };
+
     
     case 'RESET':
       return {
@@ -174,7 +180,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         reverbType: 'default',
         volume: AUDIO_CONFIG.DEFAULT_VOLUME,
         bass: AUDIO_CONFIG.DEFAULT_BASS,
-        muffled: { ...DEFAULT_MUFFLED },
         eightD: {
           enabled: false,
           autoRotate: true,

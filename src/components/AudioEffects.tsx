@@ -120,13 +120,13 @@ export const AudioEffects = memo(({
           />
         </div>
 
-        {/* Muffled Effect */}
+        {/* Muffled Effect - temporarily disabled */}
         <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
           <MuffledControls
-            muffled={player.muffled || { enabled: false, intensity: 50 }}
-            setMuffledEnabled={player.setMuffledEnabled}
-            setMuffledIntensity={player.setMuffledIntensity}
-            resetMuffledEffects={player.resetMuffledEffects}
+            muffled={{ enabled: false, intensity: 50 }}
+            setMuffledEnabled={() => {}}
+            setMuffledIntensity={() => {}}
+            resetMuffledEffects={() => {}}
           />
         </div>
 

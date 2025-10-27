@@ -39,8 +39,8 @@ export const EditorPage = memo<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass, eightD, muffled } = player;
-    savePreset(name, { speed, reverb, volume, bass, eightD, muffled });
+    const { speed, reverb, volume, bass, eightD } = player;
+    savePreset(name, { speed, reverb, volume, bass, eightD });
   };
 
   const handleLoadPreset = (settings: PresetSettings) => {
@@ -52,10 +52,6 @@ export const EditorPage = memo<{
     player.setEightDAutoRotate(settings.eightD.autoRotate);
     player.setEightDRotationSpeed(settings.eightD.rotationSpeed);
     player.setEightDManualPosition(settings.eightD.manualPosition);
-    if (settings.muffled) {
-      player.setMuffledEnabled(settings.muffled.enabled);
-      player.setMuffledIntensity(settings.muffled.intensity);
-    }
     setIsSettingsOpen(false);
   };
 

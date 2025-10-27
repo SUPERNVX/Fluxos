@@ -4,8 +4,7 @@ import {
   AUDIO_CONFIG, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO,
-  DEFAULT_MUFFLED
+  DEFAULT_SPATIAL_AUDIO
 } from '../constants/audioConfig';
 import { bufferToWav } from '../utils/audioHelpers';
 import { audioReducer } from '../reducers/audioReducer';
@@ -31,7 +30,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     reverbType: 'default',
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
     bass: AUDIO_CONFIG.DEFAULT_BASS,
-    muffled: { ...DEFAULT_MUFFLED },
     eightD: {
       enabled: false,
       autoRotate: true,
@@ -170,10 +168,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
     panner.distanceModel = 'inverse';
     panner.refDistance = 1;
     panner.maxDistance = 10000;
-    panner.rolloffFactor = 1;
+    panner.rolloffFactor = 0; // Minimal rolloff when disabled
     panner.coneInnerAngle = 360;
-    panner.coneOuterAngle = 0;
-    panner.coneOuterGain = 0;
+    panner.coneOuterAngle = 360; // Same as inner to avoid directional effects
+    panner.coneOuterGain = 1;   // No attenuation
     return panner;
   }, []);
 
@@ -255,6 +253,17 @@ export const useAudioPlayer = (audioFile: File | null) => {
   const setupAudioGraph = useCallback((preservePlayback = false) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
+    
+    // Properly disconnect and clean up existing audio nodes before creating new ones
+    Object.values(audioNodesRef.current).forEach(node => {
+      if (node && typeof node === 'object' && 'disconnect' in node) {
+        try {
+          (node as AudioNode).disconnect();
+        } catch (e) {
+          // Ignore errors during disconnect
+        }
+      }
+    });
     
     // Salva o estado atual de reprodução
     const wasPlaying = state.isPlaying;
@@ -438,24 +447,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.bitcrusher = bitcrusher;
     }
 
-    // === EFEITO MUFFLED ===
-    // Sempre cria o filtro muffled para evitar reconstrução do grafo ao habilitar/desabilitar
-    const muffledFilter = ctx.createBiquadFilter();
-    muffledFilter.type = 'lowpass';
-    
-    // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
-    // Quanto maior a intensidade, menor a frequência de corte (mais abafado)
-    const minFreq = 200;  // Frequência mínima quando intensidade é 100%
-    const maxFreq = 8000; // Frequência máxima quando intensidade é 0%
-    const frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
-    
-    muffledFilter.frequency.setValueAtTime(Math.max(minFreq, Math.min(maxFreq, frequency)), ctx.currentTime);
-    muffledFilter.Q.setValueAtTime(1, ctx.currentTime); // Ressonância padrão
-    
-    // Conecta o filtro sempre, mas o estado de enabled controla se o efeito é ativo
-    currentNode.connect(muffledFilter);
-    currentNode = muffledFilter;
-    audioNodesRef.current.muffledFilter = muffledFilter;
+
 
     // === EFEITOS ESPACIAIS AVANÇADOS ===
 
@@ -475,16 +467,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.binauralProcessor = { convolver: binauralConvolver, gain: binauralGain };
     }
 
-    // Configura o 8D se habilitado
-    if (state.eightD.enabled) {
-      if (!audioNodesRef.current.eightDPanner) {
-        audioNodesRef.current.eightDPanner = createEightDPanner(ctx);
-      }
-      
-      // Conecta ao panner 8D
-      currentNode.connect(audioNodesRef.current.eightDPanner);
-      currentNode = audioNodesRef.current.eightDPanner;
+    // Sempre cria e conecta o panner 8D para evitar reconstrução do grafo ao habilitar/desabilitar
+    if (!audioNodesRef.current.eightDPanner) {
+      audioNodesRef.current.eightDPanner = createEightDPanner(ctx);
     }
+    
+    // Conecta o panner 8D sempre, mas o estado de enabled controla seu comportamento
+    currentNode.connect(audioNodesRef.current.eightDPanner);
+    currentNode = audioNodesRef.current.eightDPanner;
 
     // Conecta o bass boost no final da cadeia de efeitos
     currentNode.connect(bassBoost);
@@ -517,7 +507,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     return source;
   }, [
     // Only include state properties that change the graph structure (enable/disable states)
-    state.muffled.enabled,
     state.eightD.enabled,
     state.spatialAudio.binaural.enabled,
     // Include modulation effect enables
@@ -1006,26 +995,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       if (bitcrusher.updateSampleRate) bitcrusher.updateSampleRate(state.distortion.bitcrusher.sampleRate);
     }
     
-    // Atualizações em tempo real para efeito muffled
-    if (audioNodesRef.current.muffledFilter && audioContextRef.current && state.muffled?.intensity != null) {
-      // Mapeia a intensidade (0-100%) para uma faixa de frequência (200Hz - 8000Hz)
-      const minFreq = 200;  // Frequência mínima quando intensidade é 100%
-      const maxFreq = 8000; // Frequência máxima quando intensidade é 0%
-      let frequency;
-      
-      if (state.muffled.enabled) {
-        // Quando enabled, aplica o cálculo normal
-        frequency = maxFreq - (state.muffled.intensity / 100) * (maxFreq - minFreq);
-      } else {
-        // Quando disabled, mantém a frequência máxima (sem efeito muffled)
-        frequency = maxFreq; // Frequência alta = sem atenuação
-      }
-      
-      audioNodesRef.current.muffledFilter.frequency.setValueAtTime(
-        Math.max(minFreq, Math.min(maxFreq, frequency)), 
-        audioContextRef.current.currentTime
-      );
-    }
+
     
     // Atualizações em tempo real para áudio espacial
     if (audioNodesRef.current.binauralProcessor && audioContextRef.current) {
@@ -1037,6 +1007,25 @@ export const useAudioPlayer = (audioFile: File | null) => {
         );
       }
     }
+    
+    // Atualizações em tempo real para 8D Audio
+    if (audioNodesRef.current.eightDPanner && audioContextRef.current) {
+      // Configura o panner conforme o estado de enabled
+      if (state.eightD.enabled) {
+        // Ativa o efeito 8D com rotação espacial
+        const angleInRadians = (state.eightD.manualPosition * Math.PI) / 180;
+        const x = Math.sin(angleInRadians);  // Coordenada X (esquerda/direita)
+        const y = 0;                         // Coordenada Y (cima/baixo) - mantido zero para rotação horizontal
+        const z = Math.cos(angleInRadians);  // Coordenada Z (frente/trás)
+        
+        // Define a posição do panner para criar o efeito 8D
+        audioNodesRef.current.eightDPanner.setPosition(x, y, z);
+      } else {
+        // Quando desabilitado, redefine para estado neutro que minimiza o efeito
+        // Posição central e parâmetros configurados para mínimo impacto
+        audioNodesRef.current.eightDPanner.setPosition(0, 0, 1);
+      }
+    }
   }, [
     state.speed, state.reverb, state.reverbType, state.volume, state.bass,
     state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
@@ -1046,7 +1035,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
     state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
     state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
-    state.muffled.intensity,
     state.spatialAudio.binaural.width
   ]);
 
@@ -1067,9 +1055,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setEightDRotationSpeed: (value: number) => dispatch(audioActions.setEightDRotationSpeed(value)),
     setEightDManualPosition: (value: number) => dispatch(audioActions.setEightDManualPosition(value)),
     
-    // Muffled controls
-    setMuffledEnabled: (value: boolean) => dispatch(audioActions.setMuffledEnabled(value)),
-    setMuffledIntensity: (value: number) => dispatch(audioActions.setMuffledIntensity(value)),
+
     
     // Modulation Effects
     setFlangerEnabled: (value: boolean) => dispatch(audioActions.setFlangerEnabled(value)),
@@ -1113,7 +1099,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     // Reset Functions
     resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),
     resetDistortionEffects: () => dispatch(audioActions.resetDistortionEffects()),
-    resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
+
     resetSpatialAudioEffects: () => dispatch(audioActions.resetSpatialAudioEffects()),
   };
 
@@ -1126,7 +1112,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [
     // Parâmetros que afetam a conexão do grafo (enable/disabled states)
-    // NOTA: muffled.enabled foi removido porque o filtro muffled agora é sempre conectado
+    // NOTA: muffled.enabled e eightD.enabled foram removidos para evitar reconstrução desnecessária
     state.modulation.flanger.enabled,
     state.modulation.phaser.enabled,
     state.modulation.tremolo.enabled,
@@ -1135,7 +1121,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.bitcrusher.enabled,
     state.distortion.fuzz.enabled,
     state.spatialAudio.binaural.enabled,
-    state.eightD.enabled,
     setupAudioGraph
   ]);
 
