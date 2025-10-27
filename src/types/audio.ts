@@ -159,7 +159,11 @@ export type AudioNodes = {
   dryGain?: GainNode;
   mainGain?: GainNode;
   bassBoost?: BiquadFilterNode;
+  bassWetGain?: GainNode;
+  bassDryGain?: GainNode;
   eightDPanner?: PannerNode;
+  eightDWetGain?: GainNode;
+  eightDDryGain?: GainNode;
   flanger?: FlangerEffect;
   phaser?: PhaserEffect;
   tremolo?: TremoloEffect;
