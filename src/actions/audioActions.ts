@@ -63,6 +63,12 @@ export const setBinauralRoomSize = (value: number) => ({ type: 'SET_BINAURAL_ROO
 export const setBinauralDamping = (value: number) => ({ type: 'SET_BINAURAL_DAMPING', value } as const);
 export const setBinauralWidth = (value: number) => ({ type: 'SET_BINAURAL_WIDTH', value } as const);
 
+// Muffle effect actions
+export const setMuffleEnabled = (value: boolean) => ({ type: 'SET_MUFFLE_ENABLED', value } as const);
+export const setMuffleIntensity = (value: number) => ({ type: 'SET_MUFFLE_INTENSITY', value } as const);
+
+export const resetMuffledEffects = () => ({ type: 'RESET_MUFFLE_EFFECTS' } as const);
+
 // Reset actions
 export const resetModulationEffects = () => ({ type: 'RESET_MODULATION_EFFECTS' } as const);
 export const resetDistortionEffects = () => ({ type: 'RESET_DISTORTION_EFFECTS' } as const);

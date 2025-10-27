@@ -15,7 +15,8 @@ import {
   createBitCrusher,
   createOverdriveEffect,
   createDistortionEffect,
-  createFuzzEffect
+  createFuzzEffect,
+  createMuffleEffect
 } from '../utils/effects';
 import * as audioActions from '../actions/audioActions';
 
@@ -38,7 +39,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     },
     modulation: { ...DEFAULT_MODULATION },
     distortion: { ...DEFAULT_DISTORTION },
-    spatialAudio: { ...DEFAULT_SPATIAL_AUDIO },
+    spatialAudio: { ...DEFAULT_SPATIAL_AUDIO, muffle: { enabled: false, intensity: 0 } },
   });
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() => 
@@ -410,6 +411,23 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.binauralProcessor = { convolver: binauralConvolver, gain: binauralGain };
     }
 
+    // --- Muffle Bypass Graph ---
+    const muffleInput = currentNode;
+    const muffleFilter = createMuffleEffect(ctx, state.spatialAudio.muffle.intensity);
+    const muffleWetGain = ctx.createGain();
+    const muffleDryGain = ctx.createGain();
+    const muffleMerger = ctx.createGain();
+    muffleWetGain.gain.value = state.spatialAudio.muffle.enabled ? 1 : 0;
+    muffleDryGain.gain.value = state.spatialAudio.muffle.enabled ? 0 : 1;
+
+    muffleInput.connect(muffleFilter);
+    muffleFilter.connect(muffleWetGain);
+    muffleWetGain.connect(muffleMerger);
+
+    muffleInput.connect(muffleDryGain);
+    muffleDryGain.connect(muffleMerger);
+    currentNode = muffleMerger;
+
     // --- 8D Audio Bypass Graph ---
     const eightDInput = currentNode;
     // Wet path
@@ -452,7 +470,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
       bassDryGain,
       eightDPanner,
       eightDWetGain,
-      eightDDryGain
+      eightDDryGain,
+      muffle: muffleFilter,
+      muffleWetGain,
+      muffleDryGain
     };
 
     if (preservePlayback && wasPlaying) {
@@ -937,6 +958,25 @@ export const useAudioPlayer = (audioFile: File | null) => {
         binaural.gain.gain.linearRampToValueAtTime(state.spatialAudio.binaural.width / 100, now + rampTime);
       }
     }
+
+    // --- Muffle Bypass Logic ---
+    if (audioNodesRef.current.muffle && audioNodesRef.current.muffleWetGain && audioNodesRef.current.muffleDryGain) {
+      const muffle = state.spatialAudio.muffle;
+      if (muffle.enabled) {
+        audioNodesRef.current.muffleWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
+        audioNodesRef.current.muffleDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
+        
+        const maxFreq = 12000; // Começa a cortar mais cedo
+        const minFreq = 400;   // Corte final mais profundo
+        const frequency = maxFreq - (muffle.intensity / 100) * (maxFreq - minFreq);
+        audioNodesRef.current.muffle.frequency.linearRampToValueAtTime(frequency, now + rampTime);
+        audioNodesRef.current.muffle.Q.linearRampToValueAtTime(1.2, now + rampTime); // Q levemente aumentado
+
+      } else {
+        audioNodesRef.current.muffleWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
+        audioNodesRef.current.muffleDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
+      }
+    }
     
     // --- 8D Audio Bypass Logic ---
     if (audioNodesRef.current.eightDPanner && audioNodesRef.current.eightDWetGain && audioNodesRef.current.eightDDryGain) {
@@ -966,7 +1006,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
     state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
     state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
-    state.spatialAudio.binaural.width
+    state.spatialAudio.binaural.width,
+    state.spatialAudio.muffle.enabled,
+    state.spatialAudio.muffle.intensity
   ]);
 
 
@@ -1026,6 +1068,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setBinauralRoomSize: (value: number) => dispatch(audioActions.setBinauralRoomSize(value)),
     setBinauralDamping: (value: number) => dispatch(audioActions.setBinauralDamping(value)),
     setBinauralWidth: (value: number) => dispatch(audioActions.setBinauralWidth(value)),
+    setMuffleEnabled: (value: boolean) => dispatch(audioActions.setMuffleEnabled(value)),
+    setMuffleIntensity: (value: number) => dispatch(audioActions.setMuffleIntensity(value)),
+    resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
     
     // Reset Functions
     resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),

@@ -81,6 +81,10 @@ export type AudioState = {
       damping: number; // 0-100%
       width: number; // 0-100%
     };
+    muffle: {
+      enabled: boolean;
+      intensity: number; // 0-100%
+    };
   };
 };
 
@@ -175,6 +179,9 @@ export type AudioNodes = {
     convolver: ConvolverNode;
     gain: GainNode;
   };
+  muffle?: BiquadFilterNode;
+  muffleWetGain?: GainNode;
+  muffleDryGain?: GainNode;
 
 };
 
@@ -230,6 +237,9 @@ export type AudioAction =
   | { type: 'SET_BINAURAL_ROOM_SIZE'; value: number }
   | { type: 'SET_BINAURAL_DAMPING'; value: number }
   | { type: 'SET_BINAURAL_WIDTH'; value: number }
+  | { type: 'SET_MUFFLE_ENABLED'; value: boolean }
+  | { type: 'SET_MUFFLE_INTENSITY'; value: number }
+  | { type: 'RESET_MUFFLE_EFFECTS' }
   | { type: 'RESET_MODULATION_EFFECTS' }
   | { type: 'RESET_DISTORTION_EFFECTS' }
   | { type: 'RESET_SPATIAL_AUDIO_EFFECTS' }

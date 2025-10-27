@@ -85,6 +85,10 @@ export const DEFAULT_SPATIAL_AUDIO = {
     damping: 40, // %
     width: 80, // %
   },
+  muffle: {
+    enabled: false,
+    intensity: 0, // %
+  },
 } as const;
 
 // --- AUDIO EFFECT LIMITS --- //
@@ -200,6 +204,11 @@ export const AUDIO_EFFECT_LIMITS = {
       STEP: 1
     },
     ROOM_SIZE: {
+      MIN: 0,
+      MAX: 100,
+      STEP: 1
+    },
+    INTENSITY: {
       MIN: 0,
       MAX: 100,
       STEP: 1

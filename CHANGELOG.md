@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.5] - 2025-10-28
+
+### Added
+
+- **Muffle Effect**: Re-implemented the muffle effect with a true bypass system to prevent audio degradation when disabled.
+
+### Changed
+
+- **Muffle Effect Strength**: Adjusted the muffle effect's filter curve to be more pronounced and musically useful across its range.
+
+## [2.2.4] - 2025-10-27
+
+### Fixed
+
+- **Audio Quality Degradation**: Fixed critical audio quality issues where inactive effects were causing distortion, echo, and phase-shift artifacts. The audio is now pristine when no effects are active.
+- **Distortion on Parameter Change**: Eliminated clicks and distortion when adjusting effects by implementing smooth parameter transitions.
+
+### Changed
+
+- **Audio Effect Architecture**: Refactored all audio effect creation logic from a single file (`audioEffects.ts`) into a modular structure with individual files per effect under `src/utils/effects/`.
+
+### Technical Improvements
+
+- **True Bypass System**: Implemented a robust, click-less true bypass system for the `bassBoost` and `eightD` effects using a cross-fading `GainNode` pattern.
+- **Smooth Parameter Ramping**: Changed all real-time audio parameter updates to use `linearRampToValueAtTime` instead of `setValueAtTime`, ensuring smooth, artifact-free adjustments.
+
 ## [2.2.3] - 2025-10-25
 
 ### Fixed

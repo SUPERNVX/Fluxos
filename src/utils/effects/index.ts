@@ -8,3 +8,4 @@ export * from './overdrive';
 export * from './distortion';
 export * from './fuzz';
 export * from './bitcrusher';
+export * from './muffle';

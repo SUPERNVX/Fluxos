@@ -159,6 +159,38 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'spatialAudio', 'binaural', { damping: action.value });
     case 'SET_BINAURAL_WIDTH':
       return updateEffect(state, 'spatialAudio', 'binaural', { width: action.value });
+
+    case 'SET_MUFFLE_ENABLED':
+      return {
+        ...state,
+        spatialAudio: {
+          ...state.spatialAudio,
+          muffle: {
+            ...state.spatialAudio.muffle,
+            enabled: action.value,
+          },
+        },
+      };
+    case 'SET_MUFFLE_INTENSITY':
+      return {
+        ...state,
+        spatialAudio: {
+          ...state.spatialAudio,
+          muffle: {
+            ...state.spatialAudio.muffle,
+            intensity: action.value,
+          },
+        },
+      };
+
+    case 'RESET_MUFFLE_EFFECTS':
+      return {
+        ...state,
+        spatialAudio: {
+          ...state.spatialAudio,
+          muffle: { ...DEFAULT_SPATIAL_AUDIO.muffle },
+        },
+      };
     
     // Reset Actions
     case 'RESET_MODULATION_EFFECTS':

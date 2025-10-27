@@ -149,3 +149,26 @@ Replaced incorrect reducer logic with proper state updates that maintain the cor
 - Muffled effect toggling no longer crashes the application
 - State structure remains properly formatted during all operations
 - Application maintains stability during muffled effect enable/disable
+
+---
+
+## Problem 6: Distortion and Echo on Playback after Bypass Implementation
+
+### Issue Description
+After implementing a true bypass mechanism using a cross-fading gain structure, the audio became distorted ("estourado") and had a noticeable echo/phasing issue, especially when toggling the bypass.
+
+### Technical Analysis
+**Root Cause:** The initial cross-fading implementation used `setValueAtTime` to switch between the dry (bypass) and wet (effect) signal paths. This method changes the gain value instantly. Due to the nature of JavaScript event loop timing, the commands to set the dry path to 0 and the wet path to 1 (or vice-versa) might not execute in perfect sample-accurate synchronization. This can create a brief moment where both paths are audible simultaneously, causing signal duplication. This duplication leads to phase cancellation and constructive/destructive interference, resulting in the perceived distortion and phasing/echo artifacts.
+
+### Solution Implemented
+**Smooth Cross-fading with Ramps:** The bypass logic was corrected to use `linearRampToValueAtTime` for transitioning between the dry and wet gain nodes.
+
+### Technical Changes
+- Replaced all instances of `gain.setValueAtTime(value)` for the bypass gain nodes with `gain.linearRampToValueAtTime(value, audioContext.currentTime + 0.05)`.
+- A short ramp duration (50ms) was introduced to create a smooth and rapid cross-fade. This is short enough to feel instantaneous to the user but long enough for the audio engine to transition the gain levels smoothly, completely avoiding simultaneous signal duplication and eliminating the resulting artifacts.
+- This same ramping technique was applied to all other real-time parameter adjustments to improve overall audio quality during effect manipulation.
+
+### Result
+- The true bypass system now operates without any audible clicks, distortion, or echo.
+- Audio quality is preserved perfectly when effects are bypassed.
+- Adjusting any audio parameter results in a smooth, artifact-free transition.
