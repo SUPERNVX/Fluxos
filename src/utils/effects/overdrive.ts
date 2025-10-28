@@ -1,7 +1,7 @@
 import type { DistortionEffect } from '../../types/audio';
 
 // Função para criar efeito de overdrive com todos os componentes necessários
-export const createOverdriveEffect = (context: AudioContext, gain: number, tone: number, level: number): DistortionEffect => {
+export const createOverdriveEffect = (context: AudioContext | OfflineAudioContext, gain: number, tone: number, level: number): DistortionEffect => {
   const waveshaper = context.createWaveShaper();
   const inputGain = context.createGain();
   const toneFilter = context.createBiquadFilter();

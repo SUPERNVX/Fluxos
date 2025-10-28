@@ -1,5 +1,5 @@
 // Função para criar o efeito de muffle (som abafado)
-export const createMuffleEffect = (context: AudioContext, intensity: number) => {
+export const createMuffleEffect = (context: AudioContext | OfflineAudioContext, intensity: number) => {
   const muffleFilter = context.createBiquadFilter();
   muffleFilter.type = 'lowpass';
 

@@ -1,7 +1,7 @@
 import type { BitCrusherEffect } from '../../types/audio';
 
 // Função para criar bitcrusher verdadeiro com redução de bits e taxa de amostragem
-export const createBitCrusher = (context: AudioContext, bits: number, sampleRate: number): BitCrusherEffect => {
+export const createBitCrusher = (context: AudioContext | OfflineAudioContext, bits: number, sampleRate: number): BitCrusherEffect => {
   // Nó de entrada
   const inputGain = context.createGain();
   

@@ -3,7 +3,7 @@ import { createLFO } from './lfo';
 
 // Função para criar phaser com interface consistente
 export const createPhaserEffect = (
-  context: AudioContext,
+  context: AudioContext | OfflineAudioContext,
   rate: number,
   depth: number,
   stages: number,

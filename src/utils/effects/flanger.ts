@@ -3,7 +3,7 @@ import { createLFO } from './lfo';
 
 // Função para criar flanger com interface consistente
 export const createFlangerEffect = (
-  context: AudioContext,
+  context: AudioContext | OfflineAudioContext,
   rate: number,
   depth: number,
   feedback: number,

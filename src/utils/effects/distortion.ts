@@ -1,7 +1,7 @@
 import type { DistortionEffect } from '../../types/audio';
 
 // Função para criar efeito de distorção com todos os componentes necessários
-export const createDistortionEffect = (context: AudioContext, amount: number, tone: number, level: number): DistortionEffect => {
+export const createDistortionEffect = (context: AudioContext | OfflineAudioContext, amount: number, tone: number, level: number): DistortionEffect => {
   const waveshaper = context.createWaveShaper();
   const inputGain = context.createGain();
   const toneFilter = context.createBiquadFilter();

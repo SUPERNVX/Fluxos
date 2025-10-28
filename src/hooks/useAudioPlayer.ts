@@ -99,6 +99,58 @@ export const useAudioPlayer = (audioFile: File | null) => {
     return impulse;
   }, []);
 
+  // Função específica para criar impulse response binaural com roomSize e damping
+  const createBinauralImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext, roomSize: number, damping: number) => {
+    // roomSize afeta a duração (0-100 -> 0.5-4.0 segundos)
+    const duration = 0.5 + (roomSize / 100) * 3.5;
+    // damping afeta o decay e a densidade das reflexões (0-100 -> 1.5-6.0)
+    const decay = 1.5 + (damping / 100) * 4.5;
+    
+    const length = context.sampleRate * duration;
+    const impulse = context.createBuffer(2, length, context.sampleRate);
+    
+    for (let channel = 0; channel < 2; channel++) {
+      const data = impulse.getChannelData(channel);
+      
+      // Diferenciação entre canais para efeito binaural mais realista
+      const channelDelay = channel === 0 ? 0 : Math.floor(context.sampleRate * 0.0006); // 0.6ms delay for right ear
+      
+      for (let i = 0; i < length; i++) {
+        let value = 0;
+        
+        // Early reflections baseadas no roomSize
+        const earlyReflectionCount = Math.floor(3 + (roomSize / 100) * 12);
+        for (let j = 0; j < earlyReflectionCount; j++) {
+          const reflectionDelay = Math.floor((j + 1) * (roomSize / 100) * 1000 + channelDelay);
+          if (i === reflectionDelay && i < length) {
+            const reflectionGain = Math.pow(0.7, j) * (1 - damping / 200);
+            value += (Math.random() * 2 - 1) * reflectionGain;
+          }
+        }
+        
+        // Late reverb tail com decay baseado no damping
+        const lateReverbStart = Math.floor(context.sampleRate * 0.05); // 50ms
+        if (i > lateReverbStart) {
+          const timeRatio = (i - lateReverbStart) / (length - lateReverbStart);
+          const dampingCurve = Math.pow(1 - timeRatio, decay);
+          const densityFactor = 1 + (damping / 100) * 2; // Mais damping = mais densidade
+          value += (Math.random() * 2 - 1) * dampingCurve * 0.3 * densityFactor;
+        }
+        
+        // HRTF simulation básica para diferenciação espacial
+        if (channel === 1) {
+          // Right ear: slight high-frequency attenuation
+          if (i > 0 && i < length - 1) {
+            value = value * 0.9 + (data[i-1] || 0) * 0.1;
+          }
+        }
+        
+        data[i] = Math.max(-1, Math.min(1, value));
+      }
+    }
+    return impulse;
+  }, []);
+
   const generateWaveform = useCallback((buffer: AudioBuffer) => {
     // Extract the channel data to send to worker (this can be cloned)
     const channelData = buffer.getChannelData(0);
@@ -404,7 +456,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (state.spatialAudio.binaural.enabled) {
       const binauralConvolver = ctx.createConvolver();
       const binauralGain = ctx.createGain();
-      const binauralImpulse = createImpulseResponse(ctx);
+      const binauralImpulse = createBinauralImpulseResponse(ctx, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
       binauralConvolver.buffer = binauralImpulse;
       binauralGain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, ctx.currentTime);
       currentNode.connect(binauralConvolver);
@@ -520,7 +572,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.fuzz.enabled,
     // Include the speed for the source node
     state.speed,
-    createImpulseResponse, 
+    createImpulseResponse,
+    createBinauralImpulseResponse,
     createEightDPanner
   ]);
 
@@ -639,26 +692,102 @@ export const useAudioPlayer = (audioFile: File | null) => {
       bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
       bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
 
-      // Connect basic nodes
-      source.connect(dryGain);
-      source.connect(defaultReverbGain);
-      source.connect(hallReverbGain);
-      source.connect(roomReverbGain);
-      source.connect(plateReverbGain);
+      // Create a complete effects pipeline like the real-time version
+      let currentNode: AudioNode = source;
+
+      // === MODULATION EFFECTS ===
+      if (state.modulation.flanger.enabled) {
+        const flanger = createFlangerEffect(offlineCtx, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay);
+        currentNode.connect(flanger.input);
+        currentNode = flanger.output;
+      }
+      if (state.modulation.phaser.enabled) {
+        const phaser = createPhaserEffect(offlineCtx, state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.stages, state.modulation.phaser.feedback);
+        currentNode.connect(phaser.input);
+        currentNode = phaser.output;
+      }
+      if (state.modulation.tremolo.enabled) {
+        const tremolo = createTremoloEffect(offlineCtx, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape);
+        currentNode.connect(tremolo.input);
+        currentNode = tremolo.output;
+      }
+
+      // === DISTORTION EFFECTS ===
+      if (state.distortion.overdrive.enabled) {
+        const overdrive = createOverdriveEffect(offlineCtx, state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level);
+        currentNode.connect(overdrive.input);
+        currentNode = overdrive.output;
+      }
+      if (state.distortion.distortion.enabled) {
+        const distortion = createDistortionEffect(offlineCtx, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level);
+        currentNode.connect(distortion.input);
+        currentNode = distortion.output;
+      }
+      if (state.distortion.fuzz.enabled) {
+        const fuzz = createFuzzEffect(offlineCtx, state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate);
+        currentNode.connect(fuzz.input);
+        currentNode = fuzz.output;
+      }
+      if (state.distortion.bitcrusher.enabled) {
+        const bitcrusher = createBitCrusher(offlineCtx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
+        currentNode.connect(bitcrusher.input);
+        currentNode = bitcrusher.output;
+      }
+
+      // === SPATIAL EFFECTS ===
+      if (state.spatialAudio.binaural.enabled) {
+        const binauralConvolver = offlineCtx.createConvolver();
+        const binauralGain = offlineCtx.createGain();
+        const binauralImpulse = createBinauralImpulseResponse(offlineCtx, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
+        binauralConvolver.buffer = binauralImpulse;
+        binauralGain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, 0);
+        currentNode.connect(binauralConvolver);
+        binauralConvolver.connect(binauralGain);
+        currentNode = binauralGain;
+      }
+
+      if (state.spatialAudio.muffle.enabled) {
+        const muffleFilter = createMuffleEffect(offlineCtx, state.spatialAudio.muffle.intensity);
+        currentNode.connect(muffleFilter);
+        currentNode = muffleFilter;
+      }
+
+      // === COMPRESSOR ===
+      if (state.compressor.enabled) {
+        const compressor = offlineCtx.createDynamicsCompressor();
+        compressor.threshold.setValueAtTime(state.compressor.threshold, 0);
+        compressor.ratio.setValueAtTime(state.compressor.ratio, 0);
+        compressor.attack.setValueAtTime(state.compressor.attack, 0);
+        compressor.release.setValueAtTime(state.compressor.release, 0);
+        currentNode.connect(compressor);
+        currentNode = compressor;
+      }
+
+      // === REVERB AND FINAL CHAIN ===
+      // Connect to reverb system
+      currentNode.connect(dryGain);
+      currentNode.connect(defaultReverbGain);
+      currentNode.connect(hallReverbGain);
+      currentNode.connect(roomReverbGain);
+      currentNode.connect(plateReverbGain);
       
       defaultReverbGain.connect(defaultConvolver);
       hallReverbGain.connect(hallConvolver);
       roomReverbGain.connect(roomConvolver);
       plateReverbGain.connect(plateConvolver);
       
-      defaultConvolver.connect(mainGain);
-      hallConvolver.connect(mainGain);
-      roomConvolver.connect(mainGain);
-      plateConvolver.connect(mainGain);
-      dryGain.connect(mainGain);
+      // Create merger for reverb
+      const reverbMerger = offlineCtx.createGain();
+      defaultConvolver.connect(reverbMerger);
+      hallConvolver.connect(reverbMerger);
+      roomConvolver.connect(reverbMerger);
+      plateConvolver.connect(reverbMerger);
       
-      mainGain.connect(bassBoost);
-      bassBoost.connect(offlineCtx.destination);
+      // Final connections
+      dryGain.connect(bassBoost);
+      reverbMerger.connect(bassBoost);
+      bassBoost.connect(mainGain);
+      mainGain.connect(offlineCtx.destination);
 
       source.start(0);
 
@@ -718,7 +847,20 @@ export const useAudioPlayer = (audioFile: File | null) => {
       console.error("Error rendering audio:", error);
       return false;
     }
-  }, [state.speed, state.reverb, state.reverbType, state.volume, state.bass, createImpulseResponse]);
+  }, [
+    state.speed, state.reverb, state.reverbType, state.volume, state.bass,
+    state.modulation.flanger.enabled, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay,
+    state.modulation.phaser.enabled, state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.stages, state.modulation.phaser.feedback,
+    state.modulation.tremolo.enabled, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
+    state.distortion.overdrive.enabled, state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
+    state.distortion.distortion.enabled, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
+    state.distortion.fuzz.enabled, state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
+    state.distortion.bitcrusher.enabled, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
+    state.spatialAudio.binaural.enabled, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping, state.spatialAudio.binaural.width,
+    state.spatialAudio.muffle.enabled, state.spatialAudio.muffle.intensity,
+    state.compressor.enabled, state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release,
+    createImpulseResponse, createBinauralImpulseResponse
+  ]);
 
   // Load audio file
   useEffect(() => {
@@ -1037,23 +1179,25 @@ export const useAudioPlayer = (audioFile: File | null) => {
       }
     }
   }, [
+    // Core parameters that affect real-time audio
     state.speed, state.reverb, state.reverbType, state.volume, state.bass,
     state.eightD.enabled, state.eightD.manualPosition,
-    state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
-    state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback,
-    state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
-    state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
-    state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
-    state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
-    state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
-    state.spatialAudio.binaural.width,
+    
+    // Only include enabled effect parameters to avoid unnecessary re-renders
+    ...(state.modulation.flanger.enabled ? [state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback] : []),
+    ...(state.modulation.phaser.enabled ? [state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback] : []),
+    ...(state.modulation.tremolo.enabled ? [state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape] : []),
+    ...(state.distortion.overdrive.enabled ? [state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level] : []),
+    ...(state.distortion.distortion.enabled ? [state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level] : []),
+    ...(state.distortion.fuzz.enabled ? [state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate] : []),
+    ...(state.distortion.bitcrusher.enabled ? [state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate] : []),
+    ...(state.spatialAudio.binaural.enabled ? [state.spatialAudio.binaural.width, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping] : []),
+    ...(state.spatialAudio.muffle.enabled ? [state.spatialAudio.muffle.intensity] : []),
+    ...(state.compressor.enabled ? [state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release] : []),
+    
+    // Include enabled states to trigger re-render when effects are toggled
     state.spatialAudio.muffle.enabled,
-    state.spatialAudio.muffle.intensity,
-    state.compressor.enabled,
-    state.compressor.threshold,
-    state.compressor.ratio,
-    state.compressor.attack,
-    state.compressor.release
+    state.compressor.enabled
   ]);
 
 

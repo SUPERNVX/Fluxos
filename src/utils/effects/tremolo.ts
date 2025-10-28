@@ -3,7 +3,7 @@ import { createLFO } from './lfo';
 
 // Função para criar tremolo com interface consistente
 export const createTremoloEffect = (
-  context: AudioContext,
+  context: AudioContext | OfflineAudioContext,
   rate: number,
   depth: number,
   shape: OscillatorType

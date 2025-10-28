@@ -1,32 +1,63 @@
-// Web Worker for waveform generation
+// Optimized Web Worker for waveform generation with large file support
 self.onmessage = function(e: MessageEvent) {
   const { channelData, samples } = e.data;
   
   try {
-    // Use the provided channel data for waveform generation
     const data = channelData;
-    const blockSize = Math.floor(data.length / samples);
-    const waveform = new Float32Array(samples);
+    const dataLength = data.length;
     
-    for (let i = 0; i < samples; i++) {
-      const blockStart = blockSize * i;
-      let sum = 0;
-      let count = 0;
-      
-      // Calculate average absolute value for this block
-      for (let j = 0; j < blockSize && (blockStart + j) < data.length; j++) {
-        sum += Math.abs(data[blockStart + j]);
-        count++;
-      }
-      
-      waveform[i] = count > 0 ? sum / count : 0;
+    // Early validation
+    if (!data || samples <= 0 || dataLength === 0) {
+      self.postMessage({ success: false, error: 'Invalid data' });
+      return;
     }
     
-    // Normalize waveform
-    const maxVal = Math.max(...waveform);
+    const blockSize = Math.floor(dataLength / samples);
+    const waveform = new Float32Array(samples);
+    
+    // Optimize for large files
+    if (dataLength > 5_000_000) { // 5M samples threshold
+      // Use peak detection for large files (faster)
+      for (let i = 0; i < samples; i++) {
+        const blockStart = blockSize * i;
+        const blockEnd = Math.min(blockStart + blockSize, dataLength);
+        let peak = 0;
+        
+        // Sample every 4th point for performance
+        for (let j = blockStart; j < blockEnd; j += 4) {
+          peak = Math.max(peak, Math.abs(data[j]));
+        }
+        
+        waveform[i] = peak;
+      }
+    } else {
+      // Use RMS for smaller files (better quality)
+      for (let i = 0; i < samples; i++) {
+        const blockStart = blockSize * i;
+        const blockEnd = Math.min(blockStart + blockSize, dataLength);
+        let sumSquares = 0;
+        let count = 0;
+        
+        for (let j = blockStart; j < blockEnd; j++) {
+          const sample = data[j];
+          sumSquares += sample * sample;
+          count++;
+        }
+        
+        waveform[i] = count > 0 ? Math.sqrt(sumSquares / count) : 0;
+      }
+    }
+    
+    // Efficient normalization
+    let maxVal = 0;
+    for (let i = 0; i < samples; i++) {
+      if (waveform[i] > maxVal) maxVal = waveform[i];
+    }
+    
     if (maxVal > 0) {
-      for (let i = 0; i < waveform.length; i++) {
-        waveform[i] = waveform[i] / maxVal;
+      const normalizer = 1 / maxVal;
+      for (let i = 0; i < samples; i++) {
+        waveform[i] *= normalizer;
       }
     }
     
