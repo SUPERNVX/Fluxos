@@ -1,6 +1,6 @@
 import type { BitCrusherEffect } from '../../types/audio';
 
-// Inlined AudioWorklet processor code as a string
+// Inlined AudioWorklet processor code as a string - using proper algorithm
 const bitCrusherWorkletCode = `
 class BitCrusherProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
@@ -24,6 +24,10 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
   phase = 0;
   lastValue = 0;
 
+  constructor() {
+    super();
+  }
+
   process(inputs, outputs, parameters) {
     const input = inputs[0];
     const output = outputs[0];
@@ -32,15 +36,14 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
       return true; // No input or output channels
     }
     
-    // Get parameter values using the first value in the parameter array
+    // Get current parameter values
     const bits = parameters.bits.length > 0 ? parameters.bits[0] : 8;
     const targetSampleRate = parameters.sampleRate.length > 0 ? parameters.sampleRate[0] : 8000;
     
-    // Calculate quantization steps based on bit depth
-    const quantizationSteps = Math.pow(2, Math.floor(Math.max(1, bits))) - 1;
+    // Calculate quantization steps based on bits
+    const quantizationSteps = Math.pow(2, Math.max(1, Math.floor(bits))) - 1;
     
-    // For sample rate reduction, we'll use a standard audio context rate of 44.1kHz
-    // as a reference for calculating how many samples to skip
+    // Calculate sample rate reduction factor
     const samplesPerUpdate = Math.max(1, Math.floor(44100 / targetSampleRate));
 
     for (let channel = 0; channel < Math.min(input.length, output.length); channel++) {
@@ -48,16 +51,19 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
       const outputChannel = output[channel];
       
       for (let i = 0; i < inputChannel.length; i++) {
-        // Increment our sample counter
+        // Increment sample counter
         this.phase++;
         
         // Determine if we should sample a new value (for sample rate reduction)
         if (this.phase >= samplesPerUpdate) {
-          // Get the current input sample
+          // Get the input sample
           const inputSample = inputChannel[i];
           
-          // Apply bit depth reduction (quantization)
-          let quantizedValue = Math.round(inputSample * quantizationSteps) / quantizationSteps;
+          // Apply bit depth reduction using proper quantization
+          // Calculate the step size based on bits (similar to original WaveShaper approach)
+          const step = Math.pow(0.5, bits);
+          // Quantize the input sample using floor function (original approach)
+          let quantizedValue = step * Math.floor(inputSample / step + 0.5);
           // Clamp the result to [-1, 1] range
           quantizedValue = Math.max(-1, Math.min(1, quantizedValue));
           
