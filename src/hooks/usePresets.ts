@@ -24,5 +24,11 @@ export const usePresets = () => {
     localStorage.setItem('fluxos-presets', JSON.stringify(updatedPresets));
   }, [presets]);
 
-  return { presets, savePreset, deletePreset };
+  const updatePreset = useCallback((id: number, settings: any) => {
+    const updatedPresets = presets.map(p => p.id === id ? { ...p, settings } : p);
+    setPresets(updatedPresets);
+    localStorage.setItem('fluxos-presets', JSON.stringify(updatedPresets));
+  }, [presets]);
+
+  return { presets, savePreset, deletePreset, updatePreset };
 };

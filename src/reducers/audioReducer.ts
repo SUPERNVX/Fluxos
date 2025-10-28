@@ -3,7 +3,8 @@ import {
   AUDIO_CONFIG, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO
+  DEFAULT_SPATIAL_AUDIO,
+  DEFAULT_COMPRESSOR
 } from '../constants/audioConfig';
 
 // Helper function to update specific effect
@@ -191,6 +192,18 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           muffle: { ...DEFAULT_SPATIAL_AUDIO.muffle },
         },
       };
+
+    // Compressor actions
+    case 'SET_COMPRESSOR_ENABLED':
+      return { ...state, compressor: { ...state.compressor, enabled: action.value } };
+    case 'SET_COMPRESSOR_THRESHOLD':
+      return { ...state, compressor: { ...state.compressor, threshold: action.value } };
+    case 'SET_COMPRESSOR_RATIO':
+      return { ...state, compressor: { ...state.compressor, ratio: action.value } };
+    case 'SET_COMPRESSOR_ATTACK':
+      return { ...state, compressor: { ...state.compressor, attack: action.value } };
+    case 'SET_COMPRESSOR_RELEASE':
+      return { ...state, compressor: { ...state.compressor, release: action.value } };
     
     // Reset Actions
     case 'RESET_MODULATION_EFFECTS':
@@ -221,6 +234,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         modulation: { ...DEFAULT_MODULATION },
         distortion: { ...DEFAULT_DISTORTION },
         spatialAudio: { ...DEFAULT_SPATIAL_AUDIO },
+        compressor: { ...DEFAULT_COMPRESSOR },
       };
       
     case 'NEW_TRACK_RESET':

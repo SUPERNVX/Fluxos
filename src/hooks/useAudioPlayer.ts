@@ -4,7 +4,8 @@ import {
   AUDIO_CONFIG, 
   DEFAULT_MODULATION, 
   DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO
+  DEFAULT_SPATIAL_AUDIO,
+  DEFAULT_COMPRESSOR
 } from '../constants/audioConfig';
 import { bufferToWav } from '../utils/audioHelpers';
 import { audioReducer } from '../reducers/audioReducer';
@@ -40,6 +41,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     modulation: { ...DEFAULT_MODULATION },
     distortion: { ...DEFAULT_DISTORTION },
     spatialAudio: { ...DEFAULT_SPATIAL_AUDIO, muffle: { enabled: false, intensity: 0 } },
+    compressor: { ...DEFAULT_COMPRESSOR },
   });
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() => 
@@ -251,7 +253,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
 
 
-  const setupAudioGraph = useCallback((preservePlayback = false) => {
+  const setupAudioGraph = useCallback(async (preservePlayback = false) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
     
@@ -392,7 +394,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.fuzz = fuzz;
     }
     if (state.distortion.bitcrusher.enabled) {
-      const bitcrusher = createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
+      const bitcrusher = await createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
       currentNode.connect(bitcrusher.input);
       currentNode = bitcrusher.output;
       audioNodesRef.current.bitcrusher = bitcrusher;
@@ -449,9 +451,27 @@ export const useAudioPlayer = (audioFile: File | null) => {
     // Dry path
     bassInput.connect(bassDryGain);
     bassDryGain.connect(bassMerger);
+    currentNode = bassMerger;
+
+    // --- Compressor Bypass Graph ---
+    const compressorInput = currentNode;
+    const compressor = ctx.createDynamicsCompressor();
+    const compressorWetGain = ctx.createGain();
+    const compressorDryGain = ctx.createGain();
+    const compressorMerger = ctx.createGain();
+    compressorWetGain.gain.value = state.compressor.enabled ? 1 : 0;
+    compressorDryGain.gain.value = state.compressor.enabled ? 0 : 1;
+
+    compressorInput.connect(compressor);
+    compressor.connect(compressorWetGain);
+    compressorWetGain.connect(compressorMerger);
+
+    compressorInput.connect(compressorDryGain);
+    compressorDryGain.connect(compressorMerger);
+    currentNode = compressorMerger;
 
     // Connect to destination
-    bassMerger.connect(ctx.destination);
+    currentNode.connect(ctx.destination);
 
     audioNodesRef.current = { 
       ...audioNodesRef.current, 
@@ -473,7 +493,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
       eightDDryGain,
       muffle: muffleFilter,
       muffleWetGain,
-      muffleDryGain
+      muffleDryGain,
+      compressor,
+      compressorWetGain,
+      compressorDryGain
     };
 
     if (preservePlayback && wasPlaying) {
@@ -501,7 +524,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     createEightDPanner
   ]);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     
     // Se já temos um source ativo, paramos antes de criar um novo
@@ -512,7 +535,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       sourceNodeRef.current = null;
     }
     
-    const source = setupAudioGraph();
+    const source = await setupAudioGraph();
     if (!source) return;
 
     const offset = Math.max(0, timeRef.current.pause);
@@ -548,7 +571,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.isPlaying ? pause() : play();
   }, [state.isPlaying, play, pause]);
 
-  const seek = useCallback((newProgress: number) => {
+  const seek = useCallback(async (newProgress: number) => {
     if (!audioBufferRef.current) return;
 
     const newTime = (newProgress / 100) * audioBufferRef.current.duration;
@@ -559,7 +582,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (state.isPlaying) {
       try { sourceNodeRef.current?.stop(); } catch(e) {}
       sourceNodeRef.current = null;
-      play();
+      await play();
     }
   }, [state.isPlaying, play]);
 
@@ -807,7 +830,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       return;
     }
 
-    const updateUI = () => {
+    const updateUI = async () => {
       if (!audioContextRef.current || !audioBufferRef.current) {
         return;
       }
@@ -826,7 +849,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
         dispatch({ type: 'SET_TIME', current: 0, progress: 0 });
         
         // Reinicia a reprodução
-        play();
+        await play();
       } else {
         dispatch({ type: 'SET_TIME', current, progress: (current / total) * 100 });
       }
@@ -996,6 +1019,23 @@ export const useAudioPlayer = (audioFile: File | null) => {
         audioNodesRef.current.eightDDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
       }
     }
+
+    // --- Compressor Bypass Logic ---
+    if (audioNodesRef.current.compressor && audioNodesRef.current.compressorWetGain && audioNodesRef.current.compressorDryGain) {
+      const compressor = state.compressor;
+      if (compressor.enabled) {
+        audioNodesRef.current.compressorWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
+        audioNodesRef.current.compressorDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
+
+        audioNodesRef.current.compressor.threshold.linearRampToValueAtTime(compressor.threshold, now + rampTime);
+        audioNodesRef.current.compressor.ratio.linearRampToValueAtTime(compressor.ratio, now + rampTime);
+        audioNodesRef.current.compressor.attack.linearRampToValueAtTime(compressor.attack, now + rampTime);
+        audioNodesRef.current.compressor.release.linearRampToValueAtTime(compressor.release, now + rampTime);
+      } else {
+        audioNodesRef.current.compressorWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
+        audioNodesRef.current.compressorDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
+      }
+    }
   }, [
     state.speed, state.reverb, state.reverbType, state.volume, state.bass,
     state.eightD.enabled, state.eightD.manualPosition,
@@ -1008,7 +1048,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
     state.spatialAudio.binaural.width,
     state.spatialAudio.muffle.enabled,
-    state.spatialAudio.muffle.intensity
+    state.spatialAudio.muffle.intensity,
+    state.compressor.enabled,
+    state.compressor.threshold,
+    state.compressor.ratio,
+    state.compressor.attack,
+    state.compressor.release
   ]);
 
 
@@ -1071,6 +1116,13 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setMuffleEnabled: (value: boolean) => dispatch(audioActions.setMuffleEnabled(value)),
     setMuffleIntensity: (value: number) => dispatch(audioActions.setMuffleIntensity(value)),
     resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
+
+    // Compressor
+    setCompressorEnabled: (value: boolean) => dispatch(audioActions.setCompressorEnabled(value)),
+    setCompressorThreshold: (value: number) => dispatch(audioActions.setCompressorThreshold(value)),
+    setCompressorRatio: (value: number) => dispatch(audioActions.setCompressorRatio(value)),
+    setCompressorAttack: (value: number) => dispatch(audioActions.setCompressorAttack(value)),
+    setCompressorRelease: (value: number) => dispatch(audioActions.setCompressorRelease(value)),
     
     // Reset Functions
     resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),
@@ -1088,7 +1140,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [
     // Parâmetros que afetam a conexão do grafo (enable/disabled states)
-    // NOTA: muffled.enabled e eightD.enabled foram removidos para evitar reconstrução desnecessária
     state.modulation.flanger.enabled,
     state.modulation.phaser.enabled,
     state.modulation.tremolo.enabled,
@@ -1097,7 +1148,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.distortion.bitcrusher.enabled,
     state.distortion.fuzz.enabled,
     state.spatialAudio.binaural.enabled,
-    setupAudioGraph
+    state.speed, // Re-build graph on speed change
   ]);
 
   return {

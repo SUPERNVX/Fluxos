@@ -69,6 +69,13 @@ export const setMuffleIntensity = (value: number) => ({ type: 'SET_MUFFLE_INTENS
 
 export const resetMuffledEffects = () => ({ type: 'RESET_MUFFLE_EFFECTS' } as const);
 
+// Compressor actions
+export const setCompressorEnabled = (value: boolean) => ({ type: 'SET_COMPRESSOR_ENABLED', value } as const);
+export const setCompressorThreshold = (value: number) => ({ type: 'SET_COMPRESSOR_THRESHOLD', value } as const);
+export const setCompressorRatio = (value: number) => ({ type: 'SET_COMPRESSOR_RATIO', value } as const);
+export const setCompressorAttack = (value: number) => ({ type: 'SET_COMPRESSOR_ATTACK', value } as const);
+export const setCompressorRelease = (value: number) => ({ type: 'SET_COMPRESSOR_RELEASE', value } as const);
+
 // Reset actions
 export const resetModulationEffects = () => ({ type: 'RESET_MODULATION_EFFECTS' } as const);
 export const resetDistortionEffects = () => ({ type: 'RESET_DISTORTION_EFFECTS' } as const);

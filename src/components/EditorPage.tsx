@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, lazy, Suspense } from 'react';
 import type { Track, PresetSettings } from '../types/audio';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { usePresets } from '../hooks/usePresets';
@@ -9,7 +9,7 @@ import { SettingsModal } from './SettingsModal';
 import { PlayerControls } from './PlayerControls';
 import { Waveform } from './Waveform';
 import { SettingsIcon, DownloadIcon } from './Icons';
-import { AudioEffects } from './AudioEffects';
+const AudioEffects = lazy(() => import('./AudioEffects').then(module => ({ default: module.AudioEffects })));
 
 export const EditorPage = memo<{
   track: Track;
@@ -29,7 +29,6 @@ export const EditorPage = memo<{
     setIsRendering(true);
     setDownloadProgress(0);
     
-    // Enhanced download with progress callback support
     await player.download(track.name, (progress) => {
       setDownloadProgress(progress);
     });
@@ -39,8 +38,8 @@ export const EditorPage = memo<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass, eightD } = player;
-    savePreset(name, { speed, reverb, volume, bass, eightD });
+    const { speed, reverb, volume, bass, eightD, spatialAudio, compressor } = player;
+    savePreset(name, { speed, reverb, volume, bass, eightD, spatialAudio, compressor });
   };
 
   const handleLoadPreset = (settings: PresetSettings) => {
@@ -52,6 +51,21 @@ export const EditorPage = memo<{
     player.setEightDAutoRotate(settings.eightD.autoRotate);
     player.setEightDRotationSpeed(settings.eightD.rotationSpeed);
     player.setEightDManualPosition(settings.eightD.manualPosition);
+    if (settings.spatialAudio) {
+      player.setBinauralEnabled(settings.spatialAudio.binaural.enabled);
+      player.setBinauralRoomSize(settings.spatialAudio.binaural.roomSize);
+      player.setBinauralDamping(settings.spatialAudio.binaural.damping);
+      player.setBinauralWidth(settings.spatialAudio.binaural.width);
+      player.setMuffleEnabled(settings.spatialAudio.muffle.enabled);
+      player.setMuffleIntensity(settings.spatialAudio.muffle.intensity);
+    }
+    if (settings.compressor) {
+      player.setCompressorEnabled(settings.compressor.enabled);
+      player.setCompressorThreshold(settings.compressor.threshold);
+      player.setCompressorRatio(settings.compressor.ratio);
+      player.setCompressorAttack(settings.compressor.attack);
+      player.setCompressorRelease(settings.compressor.release);
+    }
     setIsSettingsOpen(false);
   };
 
@@ -141,7 +155,9 @@ export const EditorPage = memo<{
           </section>
         )}
 
-        <AudioEffects player={player} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <AudioEffects player={player} />
+        </Suspense>
       </main>
       
       <footer className="fixed bottom-0 left-0 right-0 bg-light-bg-secondary/80 dark:bg-dark-bg-secondary/80 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-700">

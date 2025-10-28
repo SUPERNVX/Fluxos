@@ -4,7 +4,7 @@ export type Track = {
   coverUrl: string;
 };
 
-export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD'>;
+export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD' | 'spatialAudio' | 'compressor'>;
 
 export type AudioState = {
   isPlaying: boolean;
@@ -85,6 +85,14 @@ export type AudioState = {
       enabled: boolean;
       intensity: number; // 0-100%
     };
+  };
+
+  compressor: {
+    enabled: boolean;
+    threshold: number; // dB
+    ratio: number;
+    attack: number; // s
+    release: number; // s
   };
 };
 
@@ -182,6 +190,9 @@ export type AudioNodes = {
   muffle?: BiquadFilterNode;
   muffleWetGain?: GainNode;
   muffleDryGain?: GainNode;
+  compressor?: DynamicsCompressorNode;
+  compressorWetGain?: GainNode;
+  compressorDryGain?: GainNode;
 
 };
 
@@ -240,6 +251,11 @@ export type AudioAction =
   | { type: 'SET_MUFFLE_ENABLED'; value: boolean }
   | { type: 'SET_MUFFLE_INTENSITY'; value: number }
   | { type: 'RESET_MUFFLE_EFFECTS' }
+  | { type: 'SET_COMPRESSOR_ENABLED'; value: boolean }
+  | { type: 'SET_COMPRESSOR_THRESHOLD'; value: number }
+  | { type: 'SET_COMPRESSOR_RATIO'; value: number }
+  | { type: 'SET_COMPRESSOR_ATTACK'; value: number }
+  | { type: 'SET_COMPRESSOR_RELEASE'; value: number }
   | { type: 'RESET_MODULATION_EFFECTS' }
   | { type: 'RESET_DISTORTION_EFFECTS' }
   | { type: 'RESET_SPATIAL_AUDIO_EFFECTS' }

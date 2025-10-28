@@ -91,7 +91,14 @@ export const DEFAULT_SPATIAL_AUDIO = {
   },
 } as const;
 
-// --- AUDIO EFFECT LIMITS --- //
+// Valores padrão para o compressor
+export const DEFAULT_COMPRESSOR = {
+  enabled: false,
+  threshold: -24, // dB
+  ratio: 12,
+  attack: 0.003, // s
+  release: 0.25, // s
+} as const;
 export const AUDIO_EFFECT_LIMITS = {
   // Speed
   SPEED: {
@@ -226,6 +233,30 @@ export const AUDIO_EFFECT_LIMITS = {
       MIN: 0,
       MAX: 360,
       STEP: 1
+    }
+  },
+
+  // Compressor
+  COMPRESSOR: {
+    THRESHOLD: {
+      MIN: -100,
+      MAX: 0,
+      STEP: 1
+    },
+    RATIO: {
+      MIN: 1,
+      MAX: 20,
+      STEP: 1
+    },
+    ATTACK: {
+      MIN: 0,
+      MAX: 1,
+      STEP: 0.001
+    },
+    RELEASE: {
+      MIN: 0,
+      MAX: 1,
+      STEP: 0.01
     }
   }
 } as const;

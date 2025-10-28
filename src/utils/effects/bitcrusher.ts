@@ -1,85 +1,37 @@
 import type { BitCrusherEffect } from '../../types/audio';
 
-// Função para criar bitcrusher verdadeiro com redução de bits e taxa de amostragem
-export const createBitCrusher = (context: AudioContext, bits: number, sampleRate: number): BitCrusherEffect => {
-  // Nó de entrada
-  const inputGain = context.createGain();
-  
-  // Nó para controlar a taxa de amostragem
-  const processor = context.createScriptProcessor(4096, 2, 2);
-  
-  // Nó para controlar a resolução de bits
-  const waveshaper = context.createWaveShaper();
-  
-  // Nó de saída
-  const outputGain = context.createGain();
-  
-  // Parâmetros
-  let currentBits = bits;
-  let currentSampleRate = sampleRate;
-  let counter = 0;
-  let lastValues = [0, 0]; // Para os dois canais (estéreo)
+// Função para criar bitcrusher usando AudioWorklet
+export const createBitCrusher = async (context: AudioContext, bits: number, sampleRate: number): Promise<BitCrusherEffect> => {
+  try {
+    await context.audioWorklet.addModule(new URL('../../workers/bitCrusherWorklet.ts', import.meta.url));
+  } catch (e) {
+    console.error('Error loading bit crusher worklet', e);
+    // Return a dummy effect if the worklet fails to load
+    const dummyNode = context.createGain();
+    return {
+      input: dummyNode,
+      output: dummyNode,
+      updateBits: () => {},
+      updateSampleRate: () => {},
+    };
+  }
 
-  // Função para criar a curva de bitcrushing
-  const createBitcrushCurve = (bits: number, samples: number = 44100) => {
-    const curve = new Float32Array(samples);
-    const step = Math.pow(2, bits) - 1; // Número de passos baseado nos bits
+  const bitCrusherNode = new AudioWorkletNode(context, 'bit-crusher-processor');
 
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1; 
-      // Redução de resolução de bits
-      curve[i] = Math.round(x * step) / step;
-    }
-    return curve;
-  };
+  const bitsParam = bitCrusherNode.parameters.get('bits');
+  const sampleRateParam = bitCrusherNode.parameters.get('sampleRate');
 
-  // Atualiza o efeito
-  const updateEffect = () => {
-    waveshaper.curve = createBitcrushCurve(currentBits);
-  };
-
-  // Configura o ScriptProcessor para reduzir a taxa de amostragem
-  processor.onaudioprocess = (audioProcessingEvent) => {
-    const inputData = audioProcessingEvent.inputBuffer;
-    const outputData = audioProcessingEvent.outputBuffer;
-
-    // Processa cada canal
-    for (let channel = 0; channel < outputData.numberOfChannels; channel++) {
-      const inputDataChannel = inputData.getChannelData(channel);
-      const outputDataChannel = outputData.getChannelData(channel);
-
-      for (let i = 0; i < outputData.length; i++) {
-        counter++;
-        
-        // Aplica redução de taxa de amostragem
-        if (counter >= context.sampleRate / currentSampleRate) {
-          lastValues[channel] = inputDataChannel[i];
-          counter = 0;
-        }
-        
-        // Aplica ao output
-        outputDataChannel[i] = lastValues[channel];
-      }
-    }
-  };
-
-  // Conecta os nós
-  inputGain.connect(processor);
-  processor.connect(waveshaper);
-  waveshaper.connect(outputGain);
-
-  // Inicializa
-  updateEffect();
+  if (bitsParam) bitsParam.value = bits;
+  if (sampleRateParam) sampleRateParam.value = sampleRate;
 
   return {
-    input: inputGain,
-    output: outputGain,
+    input: bitCrusherNode,
+    output: bitCrusherNode,
     updateBits: (b: number) => {
-      currentBits = b;
-      updateEffect();
+      if (bitsParam) bitsParam.setValueAtTime(b, context.currentTime);
     },
     updateSampleRate: (sr: number) => {
-      currentSampleRate = sr;
-    }
+      if (sampleRateParam) sampleRateParam.setValueAtTime(sr, context.currentTime);
+    },
   };
 };

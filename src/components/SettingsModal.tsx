@@ -6,10 +6,12 @@ export const SettingsModal = memo<{
   onClose: () => void;
   presets: any[];
   onSave: (name: string) => void;
-  onLoad: (settings: any) => void;
+  onLoad: (settings: any, id: number) => void;
   onDelete: (id: number) => void;
 }>(({ isOpen, onClose, presets, onSave, onLoad, onDelete }) => {
   const [name, setName] = useState('');
+
+
 
   if (!isOpen) return null;
 
@@ -58,10 +60,13 @@ export const SettingsModal = memo<{
             <ul className="max-h-60 overflow-y-auto space-y-2 pr-2">
               {presets.map(preset => (
                 <li key={preset.id} className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-700/50 p-3 rounded-lg">
-                  <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">{preset.name}</span>
+                  <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">
+                    {preset.name}
+                  </span>
                   <div className="flex gap-2">
+
                     <button 
-                      onClick={() => onLoad(preset.settings)}
+                      onClick={() => onLoad(preset.settings, preset.id)}
                       className="px-3 py-1 text-sm bg-zinc-200 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-200 font-semibold rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-500 transition-colors"
                     >
                       Load

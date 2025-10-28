@@ -5,6 +5,7 @@ import { EightDControls } from './EightDControls';
 import { ModulationControls } from './ModulationControls';
 import { DistortionControls } from './DistortionControls';
 import { SpatialAudioControls } from './SpatialAudioControls';
+import { CompressorControls } from './CompressorControls';
 import { MuffledControls } from './MuffledControls';
 import { AUDIO_CONFIG } from '../constants/audioConfig';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -14,7 +15,12 @@ export const AudioEffects = memo(({
 }: { player: ReturnType<typeof useAudioPlayer> }) => {
   return (
     <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
-      <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">Audio Effects</h3>
+      <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center">
+        Audio Effects
+                {player.reverb > 0 || player.volume !== 100 || player.bass > 0 || player.eightD.enabled || player.spatialAudio.binaural.enabled || player.spatialAudio.muffle.enabled || player.compressor.enabled || player.modulation.flanger.enabled || player.modulation.phaser.enabled || player.modulation.tremolo.enabled || player.distortion.overdrive.enabled || player.distortion.distortion.enabled || player.distortion.bitcrusher.enabled || player.distortion.fuzz.enabled ? (
+          <span className="ml-2 w-2 h-2 rounded-full bg-green-500"></span>
+        ) : null}
+      </h3>
       <div className="space-y-6">
         <Slider label="Speed" value={player.speed} onChange={player.setSpeed}
           min={AUDIO_CONFIG.MIN_SPEED} max={AUDIO_CONFIG.MAX_SPEED} step={AUDIO_CONFIG.SPEED_STEP} unit="x" />
@@ -103,7 +109,12 @@ export const AudioEffects = memo(({
 
 
         <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
-          <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-3">Spatial Audio</h4>
+          <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center">
+            Spatial Audio
+            {(player.eightD.enabled || player.spatialAudio.binaural.enabled || player.spatialAudio.muffle.enabled) && (
+              <span className="ml-2 w-2 h-2 rounded-full bg-green-500"></span>
+            )}
+          </h4>
 
 
           <ToggleSwitch
@@ -138,6 +149,17 @@ export const AudioEffects = memo(({
             setBinauralDamping={player.setBinauralDamping}
             setBinauralWidth={player.setBinauralWidth}
             resetSpatialAudioEffects={player.resetSpatialAudioEffects}
+          />
+        </div>
+
+        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+          <CompressorControls
+            compressor={player.compressor}
+            setCompressorEnabled={player.setCompressorEnabled}
+            setCompressorThreshold={player.setCompressorThreshold}
+            setCompressorRatio={player.setCompressorRatio}
+            setCompressorAttack={player.setCompressorAttack}
+            setCompressorRelease={player.setCompressorRelease}
           />
         </div>
       </div>
