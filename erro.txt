@@ -1,25 +1,54 @@
-index-e4befVFS.js:144 Error loading bit crusher worklet SyntaxError: Unexpected identifier 'phase'
-u0 @ index-e4befVFS.js:144
-await in u0
-(anonymous) @ index-e4befVFS.js:144
-(anonymous) @ index-e4befVFS.js:144
-bn @ index-e4befVFS.js:48
-Of @ index-e4befVFS.js:48
-Gt @ index-e4befVFS.js:48
-Of @ index-e4befVFS.js:48
-Gt @ index-e4befVFS.js:48
-Of @ index-e4befVFS.js:48
-Gt @ index-e4befVFS.js:48
-Of @ index-e4befVFS.js:48
-Gt @ index-e4befVFS.js:48
-Of @ index-e4befVFS.js:48
-Kf @ index-e4befVFS.js:48
-qu @ index-e4befVFS.js:48
-Qf @ index-e4befVFS.js:48
-wf @ index-e4befVFS.js:48
-Lf @ index-e4befVFS.js:48
-Cf @ index-e4befVFS.js:48
-Pf @ index-e4befVFS.js:48
-xn @ index-e4befVFS.js:48
-Ff @ index-e4befVFS.js:48
-(anonymous) @ index-e4befVFS.js:48
+react-dom_client.js?v=e6561d7d:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+logo.png:1  GET http://localhost:5173/logo.png 404 (Not Found)
+Fluxos/:1 Error while trying to use the following icon from the Manifest: http://localhost:5173/logo.png (Download error or resource isn't a valid image)
+bitcrusher.ts:79 Error loading bit crusher worklet SyntaxError: Unexpected end of input
+createBitCrusher @ bitcrusher.ts:79
+await in createBitCrusher
+(anonymous) @ useAudioPlayer.ts:397
+(anonymous) @ useAudioPlayer.ts:1139
+react_stack_bottom_frame @ react-dom_client.js?v=e6561d7d:17486
+runWithFiberInDEV @ react-dom_client.js?v=e6561d7d:1485
+commitHookEffectListMount @ react-dom_client.js?v=e6561d7d:8460
+commitHookPassiveMountEffects @ react-dom_client.js?v=e6561d7d:8518
+commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9887
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9899
+flushPassiveEffects @ react-dom_client.js?v=e6561d7d:11302
+flushPendingEffects @ react-dom_client.js?v=e6561d7d:11276
+flushSpawnedWork @ react-dom_client.js?v=e6561d7d:11250
+commitRoot @ react-dom_client.js?v=e6561d7d:11081
+commitRootWhenReady @ react-dom_client.js?v=e6561d7d:10512
+performWorkOnRoot @ react-dom_client.js?v=e6561d7d:10457
+performSyncWorkOnRoot @ react-dom_client.js?v=e6561d7d:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=e6561d7d:11536
+processRootScheduleInMicrotask @ react-dom_client.js?v=e6561d7d:11558
+(anonymous) @ react-dom_client.js?v=e6561d7d:11649
+<Memo>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=e6561d7d:250
+App @ App.tsx:65
+react_stack_bottom_frame @ react-dom_client.js?v=e6561d7d:17424
+renderWithHooksAgain @ react-dom_client.js?v=e6561d7d:4281
+renderWithHooks @ react-dom_client.js?v=e6561d7d:4217
+updateFunctionComponent @ react-dom_client.js?v=e6561d7d:6619
+beginWork @ react-dom_client.js?v=e6561d7d:7654
+runWithFiberInDEV @ react-dom_client.js?v=e6561d7d:1485
+performUnitOfWork @ react-dom_client.js?v=e6561d7d:10868
+workLoopSync @ react-dom_client.js?v=e6561d7d:10728
+renderRootSync @ react-dom_client.js?v=e6561d7d:10711
+performWorkOnRoot @ react-dom_client.js?v=e6561d7d:10330
+performSyncWorkOnRoot @ react-dom_client.js?v=e6561d7d:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=e6561d7d:11536
+flushSyncWork$1 @ react-dom_client.js?v=e6561d7d:10567
+batchedUpdates$1 @ react-dom_client.js?v=e6561d7d:2632
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=e6561d7d:11877
+dispatchEvent @ react-dom_client.js?v=e6561d7d:14792
+dispatchDiscreteEvent @ react-dom_client.js?v=e6561d7d:14773
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=e6561d7d:250
+(anonymous) @ main.tsx:8

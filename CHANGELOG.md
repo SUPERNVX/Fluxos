@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2025-10-28
+
+### Fixed
+
+- **BitCrusher Deployment Issue**: Resolved GitHub Pages deployment errors by replacing file-based AudioWorklet imports with Blob URL approach
+- **BitCrusher Syntax Errors**: Fixed JavaScript parsing errors in AudioWorklet code that prevented initialization
+- **Audio Quality Investigation**: Created detailed error report for ongoing BitCrusher audio quality issues
+
+### Technical Improvements
+
+- **Cross-Platform Compatibility**: BitCrusher effect now works correctly in both development and production environments
+- **Error Reporting**: Added comprehensive BitCrusher error report for diagnostic purposes
+- **Deployment Stability**: Eliminated path resolution issues that caused 404 errors on GitHub Pages
+
 ## [2.2.5] - 2025-10-28
 
 ### Added
