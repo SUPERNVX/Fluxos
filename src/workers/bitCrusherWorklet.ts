@@ -1,9 +1,6 @@
 /// <reference types="@types/audioworklet" />
 
 class BitCrusherProcessor extends AudioWorkletProcessor {
-  phase: number;
-  lastSampleValue: number;
-
   static get parameterDescriptors() {
     return [
       {
@@ -21,36 +18,67 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
     ];
   }
 
+  // State variables to maintain between process calls
+  private phase: number = 0;
+  private lastValue: number = 0;
+
   constructor() {
     super();
-    this.phase = 0;
-    this.lastSampleValue = 0;
   }
 
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
     const input = inputs[0];
     const output = outputs[0];
-    const bits = parameters.bits[0];
-    const sampleRateReduction = parameters.sampleRate[0];
+    
+    if (input.length === 0 || output.length === 0) {
+      return true; // No input or output channels
+    }
+    
+    // Get parameter values using the first value in the parameter array
+    // The AudioWorklet parameter array contains multiple values for automation
+    // Usually they'll be the same value or we can use the first one for static changes
+    const bits = parameters.bits.length > 0 ? parameters.bits[0] : 8;
+    const targetSampleRate = parameters.sampleRate.length > 0 ? parameters.sampleRate[0] : 8000;
+    
+    // Calculate quantization steps based on bit depth
+    const quantizationSteps = Math.pow(2, Math.floor(Math.max(1, bits))) - 1;
+    
+    // For sample rate reduction, we'll use a standard audio context rate of 44.1kHz
+    // as a reference for calculating how many samples to skip
+    // Higher targetSampleRate = less effect (closer to original), Lower = more crushing effect
+    const samplesPerUpdate = Math.max(1, Math.floor(44100 / targetSampleRate));
 
-    const step = Math.pow(0.5, bits);
-    let lastSample = 0;
-
-    for (let channel = 0; channel < output.length; channel++) {
+    for (let channel = 0; channel < Math.min(input.length, output.length); channel++) {
       const inputChannel = input[channel];
       const outputChannel = output[channel];
-      let phase = 0;
-
-      for (let i = 0; i < outputChannel.length; i++) {
-        phase++;
-        if (phase >= sampleRateReduction) {
-          phase = 0;
-          lastSample = step * Math.floor(inputChannel[i] / step + 0.5);
+      
+      for (let i = 0; i < inputChannel.length; i++) {
+        // Increment our sample counter
+        this.phase++;
+        
+        // Determine if we should sample a new value (for sample rate reduction)
+        if (this.phase >= samplesPerUpdate) {
+          // Get the current input sample
+          const inputSample = inputChannel[i];
+          
+          // Apply bit depth reduction (quantization)
+          let quantizedValue = Math.round(inputSample * quantizationSteps) / quantizationSteps;
+          // Clamp the result to [-1, 1] range
+          quantizedValue = Math.max(-1, Math.min(1, quantizedValue));
+          
+          // Store this as our last value to be used until next update
+          this.lastValue = quantizedValue;
+          
+          // Reset counter for next sample interval
+          this.phase = 0;
         }
-        outputChannel[i] = lastSample;
+        
+        // Output the stored value (this creates the sample rate reduction)
+        outputChannel[i] = this.lastValue;
       }
     }
 
+    // Keep the processor alive
     return true;
   }
 }
