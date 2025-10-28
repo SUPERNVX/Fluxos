@@ -74,7 +74,7 @@ export const EditorPage = memo<{
   }), [player.progress]);
 
   return (
-    <div className="min-h-screen p-4 pb-32 md:p-8 md:pb-32 max-w-4xl mx-auto">
+    <div className="min-h-screen p-4 pb-32 md:p-8 md:pb-32 max-w-6xl mx-auto">
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -102,18 +102,18 @@ export const EditorPage = memo<{
         </button>
       </header>
 
-      <main className="space-y-10">
+      <main className="space-y-6 md:space-y-10">
         <section className="flex flex-col items-center text-center">
           <img 
             src={track.coverUrl} 
             alt="Album Cover" 
-            className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-lg mb-6 cursor-pointer transition-transform hover:scale-105"
+            className="w-40 h-40 md:w-64 md:h-64 rounded-xl shadow-lg mb-4 md:mb-6 cursor-pointer transition-transform hover:scale-105"
             onClick={() => fileInputRef.current?.click()}
           />
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{track.name}</h2>
-          <p className="text-md text-zinc-500 dark:text-zinc-400 mb-6">{track.artist}</p>
+          <h2 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white">{track.name}</h2>
+          <p className="text-sm md:text-md text-zinc-500 dark:text-zinc-400 mb-4 md:mb-6">{track.artist}</p>
           
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md px-2">
             <input
               type="range"
               min="0"
@@ -161,11 +161,11 @@ export const EditorPage = memo<{
       </main>
       
       <footer className="fixed bottom-0 left-0 right-0 bg-light-bg-secondary/80 dark:bg-dark-bg-secondary/80 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-700">
-        <div className="max-w-4xl mx-auto p-4 flex justify-center items-center">
+        <div className="max-w-4xl mx-auto p-3 md:p-4 flex justify-center items-center">
           <button 
             onClick={handleDownload}
             disabled={isRendering}
-            className="w-full max-w-xs flex items-center justify-center gap-2 px-8 py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+            className="w-full max-w-xs flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
           >
             {isRendering ? (
               <>

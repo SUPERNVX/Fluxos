@@ -11,6 +11,9 @@ export { EditorPage } from './EditorPage';
 export { ModulationControls } from './ModulationControls';
 export { DistortionControls } from './DistortionControls';
 export { SpatialAudioControls } from './SpatialAudioControls';
+export { CollapsibleSection } from './CollapsibleSection';
+export { Tooltip } from './Tooltip';
+export { NumericInput } from './NumericInput';
 
 // Icons
 export { 
