@@ -1,7 +1,12 @@
 import type { BitCrusherEffect } from '../../types/audio';
 
-// Inlined AudioWorklet processor code as a string - using proper algorithm
-const bitCrusherWorkletCode = `
+// Função para criar bitcrusher usando AudioWorklet
+export const createBitCrusher = async (context: AudioContext, bits: number, sampleRateValue: number): Promise<BitCrusherEffect> => {
+  try {
+    // Create a blob URL for the worklet code to ensure it works in deployed environments
+    const workletBlob = new Blob([`
+/// <reference types="@types/audioworklet" />
+
 class BitCrusherProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
@@ -21,14 +26,14 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
   }
 
   // State variables to maintain between process calls
-  phase = 0;
-  lastValue = 0;
+  private phase: number = 0;
+  private lastValue: number = 0;
 
   constructor() {
     super();
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
     const input = inputs[0];
     const output = outputs[0];
     
@@ -36,14 +41,18 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
       return true; // No input or output channels
     }
     
-    // Get current parameter values
+    // Get parameter values using the first value in the parameter array
+    // The AudioWorklet parameter array contains multiple values for automation
+    // Usually they'll be the same value or we can use the first one for static changes
     const bits = parameters.bits.length > 0 ? parameters.bits[0] : 8;
     const targetSampleRate = parameters.sampleRate.length > 0 ? parameters.sampleRate[0] : 8000;
     
-    // Calculate quantization steps based on bits
-    const quantizationSteps = Math.pow(2, Math.max(1, Math.floor(bits))) - 1;
+    // Calculate quantization steps based on bit depth
+    const quantizationSteps = Math.pow(2, Math.floor(Math.max(1, bits))) - 1;
     
-    // Calculate sample rate reduction factor
+    // For sample rate reduction, we'll use a standard audio context rate of 44.1kHz
+    // as a reference for calculating how many samples to skip
+    // Higher targetSampleRate = less effect (closer to original), Lower = more crushing effect
     const samplesPerUpdate = Math.max(1, Math.floor(44100 / targetSampleRate));
 
     for (let channel = 0; channel < Math.min(input.length, output.length); channel++) {
@@ -51,19 +60,16 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
       const outputChannel = output[channel];
       
       for (let i = 0; i < inputChannel.length; i++) {
-        // Increment sample counter
+        // Increment our sample counter
         this.phase++;
         
         // Determine if we should sample a new value (for sample rate reduction)
         if (this.phase >= samplesPerUpdate) {
-          // Get the input sample
+          // Get the current input sample
           const inputSample = inputChannel[i];
           
-          // Apply bit depth reduction using proper quantization
-          // Calculate the step size based on bits (similar to original WaveShaper approach)
-          const step = Math.pow(0.5, bits);
-          // Quantize the input sample using floor function (original approach)
-          let quantizedValue = step * Math.floor(inputSample / step + 0.5);
+          // Apply bit depth reduction (quantization)
+          let quantizedValue = Math.round(inputSample * quantizationSteps) / quantizationSteps;
           // Clamp the result to [-1, 1] range
           quantizedValue = Math.max(-1, Math.min(1, quantizedValue));
           
@@ -85,20 +91,10 @@ class BitCrusherProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor('bit-crusher-processor', BitCrusherProcessor);
-`;
-
-// Função para criar bitcrusher usando AudioWorklet
-export const createBitCrusher = async (context: AudioContext, bits: number, sampleRateValue: number): Promise<BitCrusherEffect> => {
-  try {
-    // Create a blob URL for the worklet code to ensure it works in deployed environments
-    const workletBlob = new Blob([bitCrusherWorkletCode], { type: 'application/javascript' });
+    `], { type: 'application/javascript' });
     const workletUrl = URL.createObjectURL(workletBlob);
     
     await context.audioWorklet.addModule(workletUrl);
-    
-    // Clean up the blob URL after use
-    // Note: We can't revoke it immediately as it's used by the AudioWorkletNode
-    // So we'll return a cleanup function or rely on garbage collection
   } catch (e) {
     console.error('Error loading bit crusher worklet', e);
     // Return a dummy effect if the worklet fails to load
