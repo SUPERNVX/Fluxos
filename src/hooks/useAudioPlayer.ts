@@ -394,7 +394,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioNodesRef.current.fuzz = fuzz;
     }
     if (state.distortion.bitcrusher.enabled) {
-      const bitcrusher = await createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
+      const bitcrusher = createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
       currentNode.connect(bitcrusher.input);
       currentNode = bitcrusher.output;
       audioNodesRef.current.bitcrusher = bitcrusher;

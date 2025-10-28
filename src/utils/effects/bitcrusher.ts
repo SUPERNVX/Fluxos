@@ -1,125 +1,85 @@
 import type { BitCrusherEffect } from '../../types/audio';
 
-// Função para criar bitcrusher usando AudioWorklet
-export const createBitCrusher = async (context: AudioContext, bits: number, sampleRateValue: number): Promise<BitCrusherEffect> => {
-  try {
-    // Create a properly formatted worklet code
-    const workletCode = `
-class BitCrusherProcessor extends AudioWorkletProcessor {
-  static get parameterDescriptors() {
-    return [
-      {
-        name: 'bits',
-        defaultValue: 8,
-        minValue: 1,
-        maxValue: 16
-      },
-      {
-        name: 'sampleRate',
-        defaultValue: 8000,
-        minValue: 1000,
-        maxValue: 44100
-      }
-    ];
-  }
+// Função para criar bitcrusher verdadeiro com redução de bits e taxa de amostragem
+export const createBitCrusher = (context: AudioContext, bits: number, sampleRate: number): BitCrusherEffect => {
+  // Nó de entrada
+  const inputGain = context.createGain();
+  
+  // Nó para controlar a taxa de amostragem
+  const processor = context.createScriptProcessor(4096, 2, 2);
+  
+  // Nó para controlar a resolução de bits
+  const waveshaper = context.createWaveShaper();
+  
+  // Nó de saída
+  const outputGain = context.createGain();
+  
+  // Parâmetros
+  let currentBits = bits;
+  let currentSampleRate = sampleRate;
+  let counter = 0;
+  let lastValues = [0, 0]; // Para os dois canais (estéreo)
 
-  constructor() {
-    super();
-    this.phase = 0;
-    this.lastValue = 0;
-  }
+  // Função para criar a curva de bitcrushing
+  const createBitcrushCurve = (bits: number, samples: number = 44100) => {
+    const curve = new Float32Array(samples);
+    const step = Math.pow(2, bits) - 1; // Número de passos baseado nos bits
 
-  process(inputs, outputs, parameters) {
-    const input = inputs[0];
-    const output = outputs[0];
-    
-    if (input.length === 0 || output.length === 0) {
-      return true;
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1; 
+      // Redução de resolução de bits
+      curve[i] = Math.round(x * step) / step;
     }
-    
-    const bits = parameters.bits.length > 0 ? parameters.bits[0] : 8;
-    const targetSampleRate = parameters.sampleRate.length > 0 ? parameters.sampleRate[0] : 8000;
-    
-    // Improved quantization algorithm for better bit crushing effect
-    const quantizationLevels = Math.pow(2, Math.floor(Math.max(1, bits)));
-    
-    // Sample rate reduction calculation (using standard 44.1kHz as reference)
-    const samplesPerUpdate = Math.max(1, Math.floor(44100 / targetSampleRate));
+    return curve;
+  };
 
-    for (let channel = 0; channel < Math.min(input.length, output.length); channel++) {
-      const inputChannel = input[channel];
-      const outputChannel = output[channel];
-      
-      for (let i = 0; i < inputChannel.length; i++) {
-        this.phase++;
+  // Atualiza o efeito
+  const updateEffect = () => {
+    waveshaper.curve = createBitcrushCurve(currentBits);
+  };
+
+  // Configura o ScriptProcessor para reduzir a taxa de amostragem
+  processor.onaudioprocess = (audioProcessingEvent) => {
+    const inputData = audioProcessingEvent.inputBuffer;
+    const outputData = audioProcessingEvent.outputBuffer;
+
+    // Processa cada canal
+    for (let channel = 0; channel < outputData.numberOfChannels; channel++) {
+      const inputDataChannel = inputData.getChannelData(channel);
+      const outputDataChannel = outputData.getChannelData(channel);
+
+      for (let i = 0; i < outputData.length; i++) {
+        counter++;
         
-        if (this.phase >= samplesPerUpdate) {
-          const inputSample = inputChannel[i];
-          
-          // Apply bit depth reduction with proper bitcrusher algorithm
-          // Convert from [-1, 1] to [0, quantizationLevels-1] range, quantize, then back
-          const normalized = (inputSample + 1) * 0.5; // Convert to [0, 1]
-          const quantized = Math.floor(normalized * (quantizationLevels - 1)) / (quantizationLevels - 1);
-          let quantizedValue = quantized * 2 - 1; // Convert back to [-1, 1]
-          quantizedValue = Math.max(-1, Math.min(1, quantizedValue));
-          
-          this.lastValue = quantizedValue;
-          this.phase = 0;
+        // Aplica redução de taxa de amostragem
+        if (counter >= context.sampleRate / currentSampleRate) {
+          lastValues[channel] = inputDataChannel[i];
+          counter = 0;
         }
         
-        outputChannel[i] = this.lastValue;
+        // Aplica ao output
+        outputDataChannel[i] = lastValues[channel];
       }
     }
+  };
 
-    return true;
-  }
-}
+  // Conecta os nós
+  inputGain.connect(processor);
+  processor.connect(waveshaper);
+  waveshaper.connect(outputGain);
 
-registerProcessor('bit-crusher-processor', BitCrusherProcessor);
-`;
-      
-    const workletBlob = new Blob([workletCode], { type: 'application/javascript' });
-    const workletUrl = URL.createObjectURL(workletBlob);
-    
-    await context.audioWorklet.addModule(workletUrl);
-    
-    // Clean up the blob URL after successful loading
-    URL.revokeObjectURL(workletUrl);
-  } catch (e) {
-    console.error('Error loading bit crusher worklet', e);
-    // Return a dummy effect if the worklet fails to load
-    const dummyNode = context.createGain();
-    return {
-      input: dummyNode,
-      output: dummyNode,
-      updateBits: () => {},
-      updateSampleRate: () => {},
-    };
-  }
-
-  const bitCrusherNode = new AudioWorkletNode(context, 'bit-crusher-processor');
-
-  const bitsParam = bitCrusherNode.parameters.get('bits');
-  const sampleRateParam = bitCrusherNode.parameters.get('sampleRate');
-
-  // Set initial values - clamp to valid ranges
-  if (bitsParam) bitsParam.value = Math.max(1, Math.min(16, bits));
-  if (sampleRateParam) sampleRateParam.value = Math.max(1000, Math.min(44100, sampleRateValue));
+  // Inicializa
+  updateEffect();
 
   return {
-    input: bitCrusherNode,
-    output: bitCrusherNode,
+    input: inputGain,
+    output: outputGain,
     updateBits: (b: number) => {
-      if (bitsParam) {
-        const clampedBits = Math.max(1, Math.min(16, b));
-        bitsParam.setValueAtTime(clampedBits, context.currentTime);
-      }
+      currentBits = b;
+      updateEffect();
     },
     updateSampleRate: (sr: number) => {
-      if (sampleRateParam) {
-        const clampedSampleRate = Math.max(1000, Math.min(44100, sr));
-        sampleRateParam.setValueAtTime(clampedSampleRate, context.currentTime);
-      }
-    },
+      currentSampleRate = sr;
+    }
   };
 };
