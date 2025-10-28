@@ -14,6 +14,7 @@ export { SpatialAudioControls } from './SpatialAudioControls';
 export { CollapsibleSection } from './CollapsibleSection';
 export { Tooltip } from './Tooltip';
 export { NumericInput } from './NumericInput';
+export { LanguageSelector } from './LanguageSelector';
 
 // Icons
 export { 

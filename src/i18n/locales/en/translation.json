@@ -1,0 +1,155 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "download": "Download",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "previous": "Previous",
+    "settings": "Settings",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "rendering": "Rendering",
+    "renderingProgress": "Rendering... {{progress}}%"
+  },
+  "audioEffects": {
+    "title": "Audio Effects",
+    "speed": "Speed",
+    "reverb": "Reverb",
+    "volume": "Volume",
+    "bassBoost": "Bass Boost",
+    "eightDAudio": "8D Audio",
+    "autoRotate": "Auto Rotate",
+    "rotationSpeed": "Rotation Speed",
+    "manualPosition": "Manual Position",
+    "basicEffects": "Basic Effects",
+    "modulationEffects": "Modulation Effects",
+    "distortionEffects": "Distortion Effects",
+    "spatialAudio": "Spatial Audio",
+    "advancedSpatialAudio": "Advanced Spatial Audio",
+    "flanger": {
+      "title": "Flanger",
+      "rate": "Rate",
+      "depth": "Depth",
+      "feedback": "Feedback",
+      "delay": "Delay"
+    },
+    "phaser": {
+      "title": "Phaser",
+      "rate": "Rate",
+      "depth": "Depth",
+      "stages": "Stages",
+      "feedback": "Feedback"
+    },
+    "tremolo": {
+      "title": "Tremolo",
+      "rate": "Rate",
+      "depth": "Depth",
+      "shape": "Shape",
+      "sine": "Sine",
+      "square": "Square",
+      "triangle": "Triangle",
+      "sawtooth": "Sawtooth"
+    },
+    "overdrive": {
+      "title": "Overdrive",
+      "gain": "Gain",
+      "tone": "Tone",
+      "level": "Level"
+    },
+    "distortion": {
+      "title": "Distortion",
+      "amount": "Amount",
+      "tone": "Tone",
+      "level": "Level"
+    },
+    "bitcrusher": {
+      "title": "Bitcrusher",
+      "bits": "Bits",
+      "sampleRate": "Sample Rate"
+    },
+    "fuzz": {
+      "title": "Fuzz",
+      "amount": "Amount",
+      "tone": "Tone",
+      "gate": "Gate"
+    },
+    "binaural": {
+      "title": "Binaural",
+      "roomSize": "Room Size",
+      "damping": "Damping",
+      "width": "Width"
+    },
+    "muffle": {
+      "title": "Muffle",
+      "sectionTitle": "Muffled Effect",
+      "intensity": "Intensity"
+    },
+    "compressor": {
+      "title": "Compressor",
+      "threshold": "Threshold",
+      "ratio": "Ratio",
+      "attack": "Attack",
+      "release": "Release"
+    },
+    "reverbTypes": {
+      "default": "Default",
+      "hall": "Hall",
+      "room": "Room",
+      "plate": "Plate"
+    }
+  },
+  "player": {
+    "upload": "Upload Audio File",
+    "dropzoneText": "Drag and drop your audio file here, or click to select",
+    "dropzoneSubtitle": "Supports MP3, WAV, FLAC, and other audio formats (max 100MB)",
+    "currentTime": "Current Time",
+    "duration": "Duration"
+  },
+  "presets": {
+    "title": "Presets",
+    "savePreset": "Save Preset",
+    "presetName": "Preset Name",
+    "load": "Load",
+    "save": "Save",
+    "delete": "Delete",
+    "noPresets": "No presets saved yet",
+    "quickPresets": "Quick Presets"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System",
+    "language": "Language",
+    "about": "About",
+    "version": "Version"
+  },
+  "tooltips": {
+    "bits": "Controls the bit depth reduction. Lower values create more digital distortion.",
+    "sampleRate": "Controls the sample rate reduction. Lower values create more aliasing and digital artifacts.",
+    "rate": "Controls the speed of the modulation effect.",
+    "depth": "Controls the intensity of the modulation effect.",
+    "feedback": "Controls the amount of signal fed back into the effect.",
+    "delay": "Controls the delay time before the effect is applied.",
+    "amount": "Controls the intensity of the distortion effect.",
+    "tone": "Controls the frequency response of the effect.",
+    "level": "Controls the output level of the effect.",
+    "gate": "Controls the threshold for the fuzz effect.",
+    "stages": "Controls the number of phase shift stages.",
+    "roomSize": "Controls the size of the virtual room.",
+    "damping": "Controls the amount of high frequency damping.",
+    "width": "Controls the stereo width of the effect.",
+    "intensity": "Controls the strength of the muffle effect.",
+    "threshold": "Controls the input level at which compression begins.",
+    "ratio": "Controls the compression ratio.",
+    "attack": "Controls how quickly the compressor engages.",
+    "release": "Controls how quickly the compressor disengages."
+  }
+}

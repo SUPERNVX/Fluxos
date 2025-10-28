@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Slider } from './Slider';
 import { ToggleSwitch } from './ToggleSwitch';
 
@@ -25,10 +26,12 @@ export const CompressorControls = memo<CompressorControlsProps>(({
   setCompressorAttack, 
   setCompressorRelease 
 }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-3">
-        <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100">Compressor</h4>
+        <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100">{t('audioEffects.compressor.title')}</h4>
         <ToggleSwitch 
           label="" 
           checked={compressor.enabled} 
@@ -39,7 +42,7 @@ export const CompressorControls = memo<CompressorControlsProps>(({
       {compressor.enabled && (
         <div className="ml-4 space-y-2">
           <Slider 
-            label="Threshold" 
+            label={t('audioEffects.compressor.threshold')} 
             value={compressor.threshold} 
             onChange={setCompressorThreshold} 
             min={-100} 
@@ -48,7 +51,7 @@ export const CompressorControls = memo<CompressorControlsProps>(({
             unit="dB" 
           />
           <Slider 
-            label="Ratio" 
+            label={t('audioEffects.compressor.ratio')} 
             value={compressor.ratio} 
             onChange={setCompressorRatio} 
             min={1} 
@@ -57,7 +60,7 @@ export const CompressorControls = memo<CompressorControlsProps>(({
             unit=":1" 
           />
           <Slider 
-            label="Attack" 
+            label={t('audioEffects.compressor.attack')} 
             value={compressor.attack} 
             onChange={setCompressorAttack} 
             min={0} 
@@ -66,7 +69,7 @@ export const CompressorControls = memo<CompressorControlsProps>(({
             unit="s" 
           />
           <Slider 
-            label="Release" 
+            label={t('audioEffects.compressor.release')} 
             value={compressor.release} 
             onChange={setCompressorRelease} 
             min={0} 

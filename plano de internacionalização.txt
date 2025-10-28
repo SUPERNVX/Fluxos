@@ -1,0 +1,61 @@
+  Internationalization (i18n) Plan for Fluxos
+
+  Recommended Tech Stack:
+   1. React-i18next - Industry standard with excellent React integration
+   2. React suspense for lazy loading translations
+   3. Dynamic imports for language-specific resources
+
+  Target Languages:
+   - English (default, embedded in main bundle)
+   - Portuguese (Brazilian) - pt-BR
+   - Spanish - es
+   - Russian - ru
+
+  Recommended Additional Languages:
+   - French - fr (large global user base)
+   - German - de (European market)
+   - Chinese (Simplified) - zh-CN (large user base)
+   - Japanese - ja (high adoption of audio tools)
+
+  Implementation Strategy:
+   1. Default Language (English) loaded with the main bundle
+   2. Lazy Loading - Other languages loaded only when selected
+   3. Code Splitting - Each language in separate chunks
+   4. Language Detection - Browser preference detection
+   5. Fallback Strategy - Fallback to English for untranslated strings
+
+  File Structure:
+
+    1 src/
+    2   locales/
+    3     en/
+    4       translation.json
+    5     pt-BR/
+    6       translation.json
+    7     es/
+    8       translation.json
+    9     ru/
+   10       translation.json
+   11   hooks/
+   12     useI18N.ts (custom hook to manage language switching)
+   13   components/
+   14     LanguageSelector.ts (dropdown for language switching)
+
+  Performance Considerations:
+   - Bundle size optimization - Keep main bundle small
+   - Caching - Store loaded translations in localStorage
+   - Progressive loading - Load language on demand
+   - CDN strategy - Serve translations from CDN for faster load times
+
+  Key Components:
+   1. Language Provider - Context provider for current language
+   2. Translation Hooks - Custom hooks for accessing translations
+   3. Language Switcher - UI component for users to select language
+   4. Loader - Suspense component to show loading state during language loading
+
+  Integration Points:
+   - Component Labels - All UI text (buttons, labels, etc.)
+   - Tooltips - The new tooltips we just added
+   - Error Messages - Any user-facing errors
+   - Settings - Default values and descriptions
+   - Accessibility - Screen reader content

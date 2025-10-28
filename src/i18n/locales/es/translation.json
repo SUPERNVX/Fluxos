@@ -1,0 +1,156 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "reset": "Reiniciar",
+    "download": "Descargar",
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "settings": "Configuración",
+    "close": "Cerrar",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "Aceptar",
+    "rendering": "Renderizando",
+    "renderingProgress": "Renderizando... {{progress}}%"
+  },
+  "audioEffects": {
+    "title": "Efectos de Audio",
+    "speed": "Velocidad",
+    "reverb": "Reverberación",
+    "volume": "Volumen",
+    "bassBoost": "Refuerzo de Graves",
+    "eightDAudio": "Audio 8D",
+    "autoRotate": "Rotación Automática",
+    "rotationSpeed": "Vel. de Rotación",
+    "manualPosition": "Posición Manual",
+    "basicEffects": "Efectos Básicos",
+    "modulationEffects": "Efectos de Modulación",
+    "distortionEffects": "Efectos de Distorsión",
+    "spatialAudio": "Audio Espacial",
+    "advancedSpatialAudio": "Audio Espacial Avanzado",
+    "compressor": "Compresor",
+    "flanger": {
+      "title": "Flanger",
+      "rate": "Tasa",
+      "depth": "Profundidad",
+      "feedback": "Realimentación",
+      "delay": "Retraso"
+    },
+    "phaser": {
+      "title": "Phaser",
+      "rate": "Tasa",
+      "depth": "Profundidad",
+      "stages": "Etapas",
+      "feedback": "Realimentación"
+    },
+    "tremolo": {
+      "title": "Tremolo",
+      "rate": "Tasa",
+      "depth": "Profundidad",
+      "shape": "Forma",
+      "sine": "Seno",
+      "square": "Cuadrada",
+      "triangle": "Triangular",
+      "sawtooth": "Diente de Sierra"
+    },
+    "overdrive": {
+      "title": "Overdrive",
+      "gain": "Ganancia",
+      "tone": "Tono",
+      "level": "Nivel"
+    },
+    "distortion": {
+      "title": "Distorsión",
+      "amount": "Cantidad",
+      "tone": "Tono",
+      "level": "Nivel"
+    },
+    "bitcrusher": {
+      "title": "Bitcrusher",
+      "bits": "Bits",
+      "sampleRate": "Frecuencia de Muestreo"
+    },
+    "fuzz": {
+      "title": "Fuzz",
+      "amount": "Cantidad",
+      "tone": "Tono",
+      "gate": "Puerta"
+    },
+    "binaural": {
+      "title": "Binaural",
+      "roomSize": "Tamaño de la Sala",
+      "damping": "Amortiguación",
+      "width": "Anchura"
+    },
+    "muffle": {
+      "title": "Muffle",
+      "sectionTitle": "Efecto Muffled",
+      "intensity": "Intensidad"
+    },
+    "compressor": {
+      "title": "Compresor",
+      "threshold": "Umbral",
+      "ratio": "Relación",
+      "attack": "Ataque",
+      "release": "Liberación"
+    },
+    "reverbTypes": {
+      "default": "Predeterminado",
+      "hall": "Salón",
+      "room": "Sala",
+      "plate": "Placa"
+    }
+  },
+  "player": {
+    "upload": "Subir Archivo de Audio",
+    "dropzoneText": "Arrastra y suelta tu archivo de audio aquí, o haz clic para seleccionar",
+    "dropzoneSubtitle": "Soporta MP3, WAV, FLAC y otros formatos de audio (máx. 100MB)",
+    "currentTime": "Tiempo Actual",
+    "duration": "Duración"
+  },
+  "presets": {
+    "title": "Preajustes",
+    "savePreset": "Guardar Preajuste",
+    "presetName": "Nombre del Preajuste",
+    "load": "Cargar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "noPresets": "Aún no hay preajustes guardados",
+    "quickPresets": "Preajustes Rápidos"
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "theme": "Tema",
+    "dark": "Oscuro",
+    "light": "Claro",
+    "system": "Sistema",
+    "language": "Idioma",
+    "about": "Acerca de",
+    "version": "Versión"
+  },
+  "tooltips": {
+    "bits": "Controla la reducción de profundidad de bits. Valores más bajos crean más distorsión digital.",
+    "sampleRate": "Controla la reducción de frecuencia de muestreo. Valores más bajos crean más aliasing y artefactos digitales.",
+    "rate": "Controla la velocidad del efecto de modulación.",
+    "depth": "Controla la intensidad del efecto de modulación.",
+    "feedback": "Controla la cantidad de señal retroalimentada en el efecto.",
+    "delay": "Controla el tiempo de retardo antes de aplicar el efecto.",
+    "amount": "Controla la intensidad del efecto de distorsión.",
+    "tone": "Controla la respuesta de frecuencia del efecto.",
+    "level": "Controla el nivel de salida del efecto.",
+    "gate": "Controla el umbral para el efecto de fuzz.",
+    "stages": "Controla el número de etapas de desplazamiento de fase.",
+    "roomSize": "Controla el tamaño de la sala virtual.",
+    "damping": "Controla la cantidad de amortiguación de alta frecuencia.",
+    "width": "Controla la anchura estéreo del efecto.",
+    "intensity": "Controla la fuerza del efecto de muffle.",
+    "threshold": "Controla el nivel de entrada en el que comienza la compresión.",
+    "ratio": "Controla la relación de compresión.",
+    "attack": "Controla qué tan rápido se activa el compresor.",
+    "release": "Controla qué tan rápido se desactiva el compresor."
+  }
+}

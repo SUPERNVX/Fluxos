@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Slider } from './Slider';
 import { ToggleSwitch } from './ToggleSwitch';
 import { EightDControls } from './EightDControls';
@@ -14,6 +15,7 @@ import { useAudioPlayer } from '../hooks/useAudioPlayer';
 export const AudioEffects = memo(({
   player,
 }: { player: ReturnType<typeof useAudioPlayer> }) => {
+  const { t } = useTranslation();
   const hasAnyEffectActive = player.reverb > 0 || 
                             player.volume !== 100 || 
                             player.bass > 0 || 
@@ -33,23 +35,23 @@ export const AudioEffects = memo(({
     <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 flex items-center">
-          Audio Effects
+          {t('audioEffects.title')}
           {hasAnyEffectActive && (
             <span className="ml-2 w-2 h-2 rounded-full bg-green-500"></span>
           )}
         </h3>
       </div>
       <div className="space-y-2">
-        <Slider label="Speed" value={player.speed} onChange={player.setSpeed}
+        <Slider label={t('audioEffects.speed')} value={player.speed} onChange={player.setSpeed}
           min={AUDIO_CONFIG.MIN_SPEED} max={AUDIO_CONFIG.MAX_SPEED} step={AUDIO_CONFIG.SPEED_STEP} unit="x" />
         
         <CollapsibleSection 
-          title="Basic Effects" 
+          title={t('audioEffects.basicEffects')} 
           activeIndicator={player.reverb > 0 || player.bass > 0}
           defaultOpen={true}
         >
           <div className="space-y-2 pt-2">
-            <Slider label="Reverb" value={player.reverb} onChange={player.setReverb}
+            <Slider label={t('audioEffects.reverb')} value={player.reverb} onChange={player.setReverb}
               min={0} max={100} step={5} unit="%" />
             
             {/* Reverb Type Selector */}
@@ -58,37 +60,37 @@ export const AudioEffects = memo(({
                 onClick={() => player.setReverbType('default')}
                 className={`px-2 py-1 text-xs rounded ${player.reverbType === 'default' ? 'bg-accent text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'}`}
               >
-                Default
+                {t('audioEffects.reverbTypes.default')}
               </button>
               <button
                 onClick={() => player.setReverbType('hall')}
                 className={`px-2 py-1 text-xs rounded ${player.reverbType === 'hall' ? 'bg-accent text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'}`}
               >
-                Hall
+                {t('audioEffects.reverbTypes.hall')}
               </button>
               <button
                 onClick={() => player.setReverbType('room')}
                 className={`px-2 py-1 text-xs rounded ${player.reverbType === 'room' ? 'bg-accent text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'}`}
               >
-                Room
+                {t('audioEffects.reverbTypes.room')}
               </button>
               <button
                 onClick={() => player.setReverbType('plate')}
                 className={`px-2 py-1 text-xs rounded ${player.reverbType === 'plate' ? 'bg-accent text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'}`}
               >
-                Plate
+                {t('audioEffects.reverbTypes.plate')}
               </button>
             </div>
             
-            <Slider label="Volume" value={player.volume} onChange={player.setVolume}
+            <Slider label={t('audioEffects.volume')} value={player.volume} onChange={player.setVolume}
               min={0} max={200} step={1} unit="%" />
-            <Slider label="Bass Boost" value={player.bass} onChange={player.setBass}
+            <Slider label={t('audioEffects.bassBoost')} value={player.bass} onChange={player.setBass}
               min={0} max={100} step={1} unit="%" />
           </div>
         </CollapsibleSection>
 
         <CollapsibleSection 
-          title="Modulation Effects" 
+          title={t('audioEffects.modulationEffects')} 
           activeIndicator={player.modulation.flanger.enabled || player.modulation.phaser.enabled || player.modulation.tremolo.enabled}
           defaultOpen={true}
           resetAction={player.resetModulationEffects}
@@ -114,7 +116,7 @@ export const AudioEffects = memo(({
         </CollapsibleSection>
 
         <CollapsibleSection 
-          title="Distortion Effects" 
+          title={t('audioEffects.distortionEffects')} 
           activeIndicator={player.distortion.overdrive.enabled || player.distortion.distortion.enabled || player.distortion.bitcrusher.enabled || player.distortion.fuzz.enabled}
           defaultOpen={true}
           resetAction={player.resetDistortionEffects}
@@ -141,13 +143,13 @@ export const AudioEffects = memo(({
         </CollapsibleSection>
 
         <CollapsibleSection 
-          title="Spatial Audio" 
+          title={t('audioEffects.spatialAudio')} 
           activeIndicator={player.eightD.enabled || player.spatialAudio.binaural.enabled || player.spatialAudio.muffle.enabled}
           defaultOpen={true}
         >
           <div className="space-y-4 pt-2">
             <ToggleSwitch
-              label="8D Audio"
+              label={t('audioEffects.eightDAudio')}
               checked={player.eightD.enabled}
               onChange={player.setEightDEnabled}
             />
@@ -178,7 +180,7 @@ export const AudioEffects = memo(({
         </CollapsibleSection>
 
         <CollapsibleSection 
-          title="Compressor" 
+          title={t('audioEffects.compressor.title')} 
           activeIndicator={player.compressor.enabled}
           defaultOpen={false}
         >

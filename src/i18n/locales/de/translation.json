@@ -1,0 +1,156 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "reset": "Zurücksetzen",
+    "download": "Herunterladen",
+    "play": "Wiedergabe",
+    "pause": "Pause",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "settings": "Einstellungen",
+    "close": "Schließen",
+    "yes": "Ja",
+    "no": "Nein",
+    "ok": "OK",
+    "rendering": "Wird gerendert",
+    "renderingProgress": "Wird gerendert... {{progress}}%"
+  },
+  "audioEffects": {
+    "title": "Audioeffekte",
+    "speed": "Geschwindigkeit",
+    "reverb": "Hallen",
+    "volume": "Lautstärke",
+    "bassBoost": "Bassverstärkung",
+    "eightDAudio": "8D Audio",
+    "autoRotate": "Automatische Rotation",
+    "rotationSpeed": "Rotationsgeschwindigkeit",
+    "manualPosition": "Manuelle Position",
+    "basicEffects": "Grundeffekte",
+    "modulationEffects": "Modulationseffekte",
+    "distortionEffects": "Verzerrungseffekte",
+    "spatialAudio": "Räumliches Audio",
+    "advancedSpatialAudio": "Erweitertes Räumliches Audio",
+    "compressor": "Kompressor",
+    "flanger": {
+      "title": "Flanger",
+      "rate": "Rate",
+      "depth": "Tiefe",
+      "feedback": "Feedback",
+      "delay": "Verzögerung"
+    },
+    "phaser": {
+      "title": "Phaser",
+      "rate": "Rate",
+      "depth": "Tiefe",
+      "stages": "Stufen",
+      "feedback": "Feedback"
+    },
+    "tremolo": {
+      "title": "Tremolo",
+      "rate": "Rate",
+      "depth": "Tiefe",
+      "shape": "Form",
+      "sine": "Sinus",
+      "square": "Rechteck",
+      "triangle": "Dreieck",
+      "sawtooth": "Sägezahn"
+    },
+    "overdrive": {
+      "title": "Overdrive",
+      "gain": "Verstärkung",
+      "tone": "Klang",
+      "level": "Level"
+    },
+    "distortion": {
+      "title": "Distortion",
+      "amount": "Stärke",
+      "tone": "Klang",
+      "level": "Level"
+    },
+    "bitcrusher": {
+      "title": "Bitcrusher",
+      "bits": "Bits",
+      "sampleRate": "Abtastrate"
+    },
+    "fuzz": {
+      "title": "Fuzz",
+      "amount": "Stärke",
+      "tone": "Klang",
+      "gate": "Gate"
+    },
+    "binaural": {
+      "title": "Binaural",
+      "roomSize": "Raumgröße",
+      "damping": "Dämpfung",
+      "width": "Breite"
+    },
+    "muffle": {
+      "title": "Muffle",
+      "sectionTitle": "Muffle-Effekt",
+      "intensity": "Intensität"
+    },
+    "compressor": {
+      "title": "Kompressor",
+      "threshold": "Schwellenwert",
+      "ratio": "Verhältnis",
+      "attack": "Attacke",
+      "release": "Release"
+    },
+    "reverbTypes": {
+      "default": "Standard",
+      "hall": "Halle",
+      "room": "Zimmer",
+      "plate": "Platte"
+    }
+  },
+  "player": {
+    "upload": "Audiodatei hochladen",
+    "dropzoneText": "Audiodatei hierher ziehen und ablegen oder zum Auswählen klicken",
+    "dropzoneSubtitle": "Unterstützt MP3, WAV, FLAC und andere Audioformate (max. 100 MB)",
+    "currentTime": "Aktuelle Zeit",
+    "duration": "Dauer"
+  },
+  "presets": {
+    "title": "Voreinstellungen",
+    "savePreset": "Voreinstellung speichern",
+    "presetName": "Name der Voreinstellung",
+    "load": "Laden",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "noPresets": "Noch keine Voreinstellungen gespeichert",
+    "quickPresets": "Schnellvoreinstellungen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "general": "Allgemein",
+    "theme": "Design",
+    "dark": "Dunkel",
+    "light": "Hell",
+    "system": "System",
+    "language": "Sprache",
+    "about": "Über",
+    "version": "Version"
+  },
+  "tooltips": {
+    "bits": "Steuert die Reduzierung der Bit-Tiefe. Niedrigere Werte erzeugen mehr digitale Verzerrung.",
+    "sampleRate": "Steuert die Reduzierung der Abtastrate. Niedrigere Werte erzeugen mehr Alias-Effekte und digitale Artefakte.",
+    "rate": "Steuert die Geschwindigkeit des Modulationseffekts.",
+    "depth": "Steuert die Intensität des Modulationseffekts.",
+    "feedback": "Steuert die Menge an Signal, die in den Effekt zurückgeführt wird.",
+    "delay": "Steuert die Verzögerungszeit vor der Anwendung des Effekts.",
+    "amount": "Steuert die Intensität des Verzerrungseffekts.",
+    "tone": "Steuert die Frequenzantwort des Effekts.",
+    "level": "Steuert das Ausgabeverstärkungsniveau des Effekts.",
+    "gate": "Steuert den Schwellenwert für den Fuzz-Effekt.",
+    "stages": "Steuert die Anzahl der Phasenschiebestufen.",
+    "roomSize": "Steuert die Größe des virtuellen Raums.",
+    "damping": "Steuert die Menge an Hochfrequenzdämpfung.",
+    "width": "Steuert die Stereobreite des Effekts.",
+    "intensity": "Steuert die Stärke des Muffle-Effekts.",
+    "threshold": "Steuert das Eingangsniveau, bei dem die Kompression beginnt.",
+    "ratio": "Steuert das Kompressionsverhältnis.",
+    "attack": "Steuert, wie schnell der Kompressor anspricht.",
+    "release": "Steuert, wie schnell der Kompressor abschaltet."
+  }
+}
