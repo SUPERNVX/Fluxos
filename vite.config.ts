@@ -12,11 +12,23 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Simplified configuration for GitHub Pages
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB
         skipWaiting: true,
         clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          }
+        ]
       },
-      // Only include essential manifest properties
       includeAssets: ['logo.png'],
       manifest: {
         name: 'Fluxos',
@@ -36,4 +48,64 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Chunk para vendor libraries
+          vendor: ['react', 'react-dom'],
+          
+          // Chunk para efeitos de distorção
+          distortion: [
+            './src/utils/effects/overdrive.ts',
+            './src/utils/effects/distortion.ts',
+            './src/utils/effects/fuzz.ts',
+            './src/utils/effects/bitcrusher.ts'
+          ],
+          
+          // Chunk para efeitos de modulação
+          modulation: [
+            './src/utils/effects/flanger.ts',
+            './src/utils/effects/phaser.ts',
+            './src/utils/effects/tremolo.ts',
+            './src/utils/effects/lfo.ts'
+          ],
+          
+          // Chunk para efeitos espaciais
+          spatial: [
+            './src/utils/effects/delay.ts',
+            './src/utils/effects/muffle.ts',
+            './src/utils/effects/waveshaper.ts'
+          ],
+          
+          // Chunk para workers
+          workers: [
+            './src/workers/audioRenderWorker.ts',
+            './src/workers/waveformWorker.ts',
+            './src/workers/bitCrusherWorklet.ts'
+          ]
+        },
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop()?.replace(/\.\w+$/, '')
+            : 'chunk';
+          return `js/${facadeModuleId}-[hash].js`;
+        }
+      }
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: ['@vite/client', '@vite/env']
+  }
 });

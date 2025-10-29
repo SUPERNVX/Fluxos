@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Track } from './types/audio';
 import { LandingPage } from './components/LandingPage';
 import { EditorPage } from './components/EditorPage';
+import ErrorPopup from './components/ErrorPopup';
+import { SmartLoader } from './components/LazyComponents';
 
 export default function App() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -58,16 +60,19 @@ export default function App() {
   }, []);
 
   return (
-    <div className="bg-light-bg dark:bg-dark-bg min-h-screen text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
-      {!audioFile || !track ? (
-        <LandingPage onFileSelect={handleFileSelect} />
-      ) : (
-        <EditorPage 
-          audioFile={audioFile} 
-          track={track} 
-          onFileSelect={handleFileSelect} 
-        />
-      )}
-    </div>
+    <SmartLoader>
+      <div className="bg-light-bg dark:bg-dark-bg min-h-screen text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+        {!audioFile || !track ? (
+          <LandingPage onFileSelect={handleFileSelect} />
+        ) : (
+          <EditorPage 
+            audioFile={audioFile} 
+            track={track} 
+            onFileSelect={handleFileSelect} 
+          />
+        )}
+        <ErrorPopup />
+      </div>
+    </SmartLoader>
   );
 }

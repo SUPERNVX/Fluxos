@@ -7,6 +7,8 @@ import {
   DEFAULT_SPATIAL_AUDIO,
   DEFAULT_COMPRESSOR
 } from '../constants/audioConfig';
+import { ErrorHandler, ERROR_CODES } from '../utils/errorHandler';
+import { MemoryManager } from '../utils/memoryManager';
 import { bufferToWav } from '../utils/audioHelpers';
 import { audioReducer } from '../reducers/audioReducer';
 import {
@@ -899,17 +901,77 @@ export const useAudioPlayer = (audioFile: File | null) => {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     
-    audioFile.arrayBuffer().then(buffer => 
-      audioContextRef.current?.decodeAudioData(buffer)
-    ).then(decoded => {
+    audioFile.arrayBuffer().then(buffer => {
+      // Check memory before processing (com thresholds adaptativos)
+      const memoryStats = MemoryManager.checkMemoryUsage();
+      if (memoryStats && memoryStats.memoryUsagePercentage > 96) { // Threshold mais alto e adaptativo
+        const fileSizeMB = audioFile.size / (1024 * 1024);
+        // Só mostra erro para arquivos > 70MB ou memória realmente crítica (>98%)
+        if (fileSizeMB > 70 || memoryStats.memoryUsagePercentage > 98) {
+          ErrorHandler.logError(
+            ERROR_CODES.OUT_OF_MEMORY,
+            'Memória insuficiente para carregar arquivo',
+            `Uso atual: ${memoryStats.memoryUsagePercentage.toFixed(1)}% | Arquivo: ${fileSizeMB.toFixed(1)}MB`,
+            { fileName: audioFile.name, fileSize: audioFile.size }
+          );
+        }
+        return Promise.reject(new Error('Insufficient memory'));
+      }
+
+      // Register arrayBuffer in memory manager
+      MemoryManager.registerResource(
+        `audio-buffer-${Date.now()}`,
+        'audioBuffer',
+        buffer,
+        buffer.byteLength
+      );
+
+      return audioContextRef.current?.decodeAudioData(buffer);
+    }).then(decoded => {
       if (!decoded) return;
+      
+      // Register decoded buffer
+      MemoryManager.registerResource(
+        `decoded-buffer-${Date.now()}`,
+        'audioBuffer',
+        decoded,
+        decoded.length * decoded.numberOfChannels * 4
+      );
+      
       audioBufferRef.current = decoded;
       dispatch({ type: 'SET_DURATION', value: decoded.duration });
       generateWaveform(decoded);
       
       // Configura o grafo de áudio inicial
       setupBasicAudioGraph();
-    }).catch(console.error);
+    }).catch(error => {
+      if (error instanceof Error) {
+        if (error.name === 'EncodingError' || error.message.includes('decode')) {
+          ErrorHandler.logError(
+            ERROR_CODES.AUDIO_DECODE_FAILED,
+            'Erro ao decodificar arquivo de áudio',
+            error.message,
+            { fileName: audioFile.name, error }
+          );
+        } else if (error.name === 'NotSupportedError') {
+          ErrorHandler.logError(
+            ERROR_CODES.AUDIO_CONTEXT_FAILED,
+            'Navegador não suporta este formato de áudio',
+            error.message,
+            { fileName: audioFile.name, error }
+          );
+        } else if (error.message === 'Insufficient memory') {
+          // Already handled above
+        } else {
+          ErrorHandler.logError(
+            ERROR_CODES.FILE_CORRUPTED,
+            'Arquivo de áudio corrompido ou inválido',
+            error.message,
+            { fileName: audioFile.name, error }
+          );
+        }
+      }
+    });
 
     // Return cleanup function
     return () => {
