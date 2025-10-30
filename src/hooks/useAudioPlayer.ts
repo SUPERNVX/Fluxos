@@ -1177,14 +1177,21 @@ export const useAudioPlayer = (audioFile: File | null) => {
       if (bitcrusher.updateBits) bitcrusher.updateBits(state.distortion.bitcrusher.bits);
       if (bitcrusher.updateSampleRate) bitcrusher.updateSampleRate(state.distortion.bitcrusher.sampleRate);
     }
-    
-    // Spatial audio updates...
-    if (audioNodesRef.current.binauralProcessor) {
-      const binaural = audioNodesRef.current.binauralProcessor;
-      if (binaural.gain) {
-        binaural.gain.gain.linearRampToValueAtTime(state.spatialAudio.binaural.width / 100, now + rampTime);
+
+
+    // Binaural real-time updates (recria o impulse response quando parâmetros mudam)
+    if (audioNodesRef.current.binauralProcessor && state.spatialAudio.binaural.enabled) {
+      const processor = audioNodesRef.current.binauralProcessor;
+      try {
+        const newImpulse = createBinauralImpulseResponse(audioContextRef.current!, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
+        processor.convolver.buffer = newImpulse;
+        processor.gain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, audioContextRef.current!.currentTime);
+      } catch (error) {
+        console.warn('Error updating binaural parameters:', error);
       }
     }
+    
+    // Spatial audio updates... (removido - já tratado acima)
 
     // --- Muffle Bypass Logic ---
     if (audioNodesRef.current.muffle && audioNodesRef.current.muffleWetGain && audioNodesRef.current.muffleDryGain) {
@@ -1246,16 +1253,16 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.eightD.enabled, state.eightD.manualPosition,
     
     // Only include enabled effect parameters to avoid unnecessary re-renders
-    ...(state.modulation.flanger.enabled ? [state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback] : []),
-    ...(state.modulation.phaser.enabled ? [state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback] : []),
-    ...(state.modulation.tremolo.enabled ? [state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape] : []),
-    ...(state.distortion.overdrive.enabled ? [state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level] : []),
-    ...(state.distortion.distortion.enabled ? [state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level] : []),
-    ...(state.distortion.fuzz.enabled ? [state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate] : []),
-    ...(state.distortion.bitcrusher.enabled ? [state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate] : []),
-    ...(state.spatialAudio.binaural.enabled ? [state.spatialAudio.binaural.width, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping] : []),
-    ...(state.spatialAudio.muffle.enabled ? [state.spatialAudio.muffle.intensity] : []),
-    ...(state.compressor.enabled ? [state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release] : []),
+    state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
+    state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback,
+    state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
+    state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
+    state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
+    state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
+    state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
+    state.spatialAudio.binaural.width, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping,
+    state.spatialAudio.muffle.intensity,
+    state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release,
     
     // Include enabled states to trigger re-render when effects are toggled
     state.spatialAudio.muffle.enabled,

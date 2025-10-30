@@ -1,54 +1,78 @@
-react-dom_client.js?v=e6561d7d:17995 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-logo.png:1  GET http://localhost:5173/logo.png 404 (Not Found)
-Fluxos/:1 Error while trying to use the following icon from the Manifest: http://localhost:5173/logo.png (Download error or resource isn't a valid image)
-bitcrusher.ts:79 Error loading bit crusher worklet SyntaxError: Unexpected end of input
-createBitCrusher @ bitcrusher.ts:79
-await in createBitCrusher
-(anonymous) @ useAudioPlayer.ts:397
-(anonymous) @ useAudioPlayer.ts:1139
-react_stack_bottom_frame @ react-dom_client.js?v=e6561d7d:17486
-runWithFiberInDEV @ react-dom_client.js?v=e6561d7d:1485
-commitHookEffectListMount @ react-dom_client.js?v=e6561d7d:8460
-commitHookPassiveMountEffects @ react-dom_client.js?v=e6561d7d:8518
-commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9887
-recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
-commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9984
-recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
-commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9881
-recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
-commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9984
-recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=e6561d7d:9868
-commitPassiveMountOnFiber @ react-dom_client.js?v=e6561d7d:9899
-flushPassiveEffects @ react-dom_client.js?v=e6561d7d:11302
-flushPendingEffects @ react-dom_client.js?v=e6561d7d:11276
-flushSpawnedWork @ react-dom_client.js?v=e6561d7d:11250
-commitRoot @ react-dom_client.js?v=e6561d7d:11081
-commitRootWhenReady @ react-dom_client.js?v=e6561d7d:10512
-performWorkOnRoot @ react-dom_client.js?v=e6561d7d:10457
-performSyncWorkOnRoot @ react-dom_client.js?v=e6561d7d:11635
-flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=e6561d7d:11536
-processRootScheduleInMicrotask @ react-dom_client.js?v=e6561d7d:11558
-(anonymous) @ react-dom_client.js?v=e6561d7d:11649
-<Memo>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=e6561d7d:250
-App @ App.tsx:65
-react_stack_bottom_frame @ react-dom_client.js?v=e6561d7d:17424
-renderWithHooksAgain @ react-dom_client.js?v=e6561d7d:4281
-renderWithHooks @ react-dom_client.js?v=e6561d7d:4217
-updateFunctionComponent @ react-dom_client.js?v=e6561d7d:6619
-beginWork @ react-dom_client.js?v=e6561d7d:7654
-runWithFiberInDEV @ react-dom_client.js?v=e6561d7d:1485
-performUnitOfWork @ react-dom_client.js?v=e6561d7d:10868
-workLoopSync @ react-dom_client.js?v=e6561d7d:10728
-renderRootSync @ react-dom_client.js?v=e6561d7d:10711
-performWorkOnRoot @ react-dom_client.js?v=e6561d7d:10330
-performSyncWorkOnRoot @ react-dom_client.js?v=e6561d7d:11635
-flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=e6561d7d:11536
-flushSyncWork$1 @ react-dom_client.js?v=e6561d7d:10567
-batchedUpdates$1 @ react-dom_client.js?v=e6561d7d:2632
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=e6561d7d:11877
-dispatchEvent @ react-dom_client.js?v=e6561d7d:14792
-dispatchDiscreteEvent @ react-dom_client.js?v=e6561d7d:14773
-<App>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=e6561d7d:250
-(anonymous) @ main.tsx:8
+bitcrusher.ts:9 [Deprecation] The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)
+createBitCrusher @ bitcrusher.ts:9
+(anonymous) @ useAudioPlayer.ts:451
+(anonymous) @ useAudioPlayer.ts:1379
+react_stack_bottom_frame @ react-dom_client.js?v=b360b365:17486
+runWithFiberInDEV @ react-dom_client.js?v=b360b365:1485
+commitHookEffectListMount @ react-dom_client.js?v=b360b365:8460
+commitHookPassiveMountEffects @ react-dom_client.js?v=b360b365:8518
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9887
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=b360b365:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=b360b365:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=b360b365:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9881
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=b360b365:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9984
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=b360b365:9868
+commitPassiveMountOnFiber @ react-dom_client.js?v=b360b365:9899
+flushPassiveEffects @ react-dom_client.js?v=b360b365:11302
+flushPendingEffects @ react-dom_client.js?v=b360b365:11276
+flushSpawnedWork @ react-dom_client.js?v=b360b365:11250
+commitRoot @ react-dom_client.js?v=b360b365:11081
+commitRootWhenReady @ react-dom_client.js?v=b360b365:10512
+performWorkOnRoot @ react-dom_client.js?v=b360b365:10457
+performSyncWorkOnRoot @ react-dom_client.js?v=b360b365:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=b360b365:11536
+processRootScheduleInMicrotask @ react-dom_client.js?v=b360b365:11558
+(anonymous) @ react-dom_client.js?v=b360b365:11649
+useAudioPlayer.ts:1096 The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+
+Previous: [0.8, 0, default, 100, 0, false, 0, 8, 8000, false, false]
+Incoming: [0.8, 0, default, 100, 0, false, 0, 8, 8000, 50, 30, 40, false, false]
+areHookInputsEqual @ react-dom_client.js?v=b360b365:4180
+updateEffectImpl @ react-dom_client.js?v=b360b365:4974
+useEffect @ react-dom_client.js?v=b360b365:16740
+exports.useEffect @ chunk-PSQR3SVX.js?v=b360b365:897
+useAudioPlayer @ useAudioPlayer.ts:1096
+(anonymous) @ EditorPage.tsx:28
+react_stack_bottom_frame @ react-dom_client.js?v=b360b365:17424
+renderWithHooks @ react-dom_client.js?v=b360b365:4206
+updateFunctionComponent @ react-dom_client.js?v=b360b365:6619
+updateSimpleMemoComponent @ react-dom_client.js?v=b360b365:6528
+beginWork @ react-dom_client.js?v=b360b365:7923
+runWithFiberInDEV @ react-dom_client.js?v=b360b365:1485
+performUnitOfWork @ react-dom_client.js?v=b360b365:10868
+workLoopSync @ react-dom_client.js?v=b360b365:10728
+renderRootSync @ react-dom_client.js?v=b360b365:10711
+performWorkOnRoot @ react-dom_client.js?v=b360b365:10330
+performSyncWorkOnRoot @ react-dom_client.js?v=b360b365:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=b360b365:11536
+processRootScheduleInMicrotask @ react-dom_client.js?v=b360b365:11558
+(anonymous) @ react-dom_client.js?v=b360b365:11649
+useAudioPlayer.ts:1096 The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+
+Previous: [0.8, 0, default, 100, 0, false, 0, 8, 8000, false, false]
+Incoming: [0.8, 0, default, 100, 0, false, 0, 8, 8000, 50, 30, 40, false, false]
+areHookInputsEqual @ react-dom_client.js?v=b360b365:4180
+updateEffectImpl @ react-dom_client.js?v=b360b365:4974
+useEffect @ react-dom_client.js?v=b360b365:16865
+exports.useEffect @ chunk-PSQR3SVX.js?v=b360b365:897
+useAudioPlayer @ useAudioPlayer.ts:1096
+(anonymous) @ EditorPage.tsx:28
+react_stack_bottom_frame @ react-dom_client.js?v=b360b365:17424
+renderWithHooksAgain @ react-dom_client.js?v=b360b365:4281
+renderWithHooks @ react-dom_client.js?v=b360b365:4217
+updateFunctionComponent @ react-dom_client.js?v=b360b365:6619
+updateSimpleMemoComponent @ react-dom_client.js?v=b360b365:6528
+beginWork @ react-dom_client.js?v=b360b365:7923
+runWithFiberInDEV @ react-dom_client.js?v=b360b365:1485
+performUnitOfWork @ react-dom_client.js?v=b360b365:10868
+workLoopSync @ react-dom_client.js?v=b360b365:10728
+renderRootSync @ react-dom_client.js?v=b360b365:10711
+performWorkOnRoot @ react-dom_client.js?v=b360b365:10330
+performSyncWorkOnRoot @ react-dom_client.js?v=b360b365:11635
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=b360b365:11536
+processRootScheduleInMicrotask @ react-dom_client.js?v=b360b365:11558
+(anonymous) @ react-dom_client.js?v=b360b365:11649

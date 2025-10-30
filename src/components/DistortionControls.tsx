@@ -232,6 +232,7 @@ export const DistortionControls = memo<DistortionControlsProps>(({
           </div>
         )}
       </div>
+
     </div>
   );
 });

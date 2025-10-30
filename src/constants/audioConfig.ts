@@ -82,8 +82,8 @@ export const DEFAULT_SPATIAL_AUDIO = {
   binaural: {
     enabled: false,
     roomSize: 50, // %
-    damping: 40, // %
-    width: 80, // %
+    damping: 100, // %
+    width: 100, // %
   },
   muffle: {
     enabled: false,

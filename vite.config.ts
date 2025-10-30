@@ -91,8 +91,7 @@ export default defineConfig({
           // Chunk para workers
           workers: [
             './src/workers/audioRenderWorker.ts',
-            './src/workers/waveformWorker.ts',
-            './src/workers/bitCrusherWorklet.ts'
+            './src/workers/waveformWorker.ts'
           ]
         },
         chunkFileNames: (chunkInfo) => {

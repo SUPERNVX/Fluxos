@@ -148,6 +148,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'distortion', 'fuzz', { tone: action.value });
     case 'SET_FUZZ_GATE':
       return updateEffect(state, 'distortion', 'fuzz', { gate: action.value });
+
       
 
     
