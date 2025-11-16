@@ -22,7 +22,7 @@ const withLazyLoading = <P extends object>(
   LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>,
   fallback?: React.ReactNode
 ) => {
-  return React.forwardRef<any, P>((props, ref) => (
+  return React.forwardRef<unknown, P>((props, ref) => (
     <Suspense fallback={fallback || <LoadingSpinner />}>
       <LazyComponent {...props} ref={ref} />
     </Suspense>
@@ -37,7 +37,7 @@ export const EightDControls = withLazyLoading(LazyEightDControls);
 export const MuffledControls = withLazyLoading(LazyMuffledControls);
 
 // Hook para pré-carregar componentes quando necessário
-export const usePreloadComponents = () => {
+const usePreloadComponents = () => {
   const preloadDistortion = () => import('./DistortionControls');
   const preloadModulation = () => import('./ModulationControls');
   const preloadSpatial = () => import('./SpatialAudioControls');

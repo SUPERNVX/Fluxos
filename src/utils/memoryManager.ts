@@ -13,7 +13,7 @@ interface ManagedResource {
   type: 'audioBuffer' | 'blob' | 'objectUrl' | 'canvas' | 'imageData';
   size: number;
   timestamp: number;
-  data: any;
+  data: unknown;
 }
 
 export class MemoryManager {
@@ -27,7 +27,7 @@ export class MemoryManager {
   static registerResource(
     id: string, 
     type: ManagedResource['type'], 
-    data: any, 
+    data: unknown, 
     size?: number
   ): string {
     const resourceSize = size || this.estimateSize(data, type);
@@ -163,8 +163,15 @@ export class MemoryManager {
   // Obtém estatísticas de memória
   static getMemoryStats(): MemoryStats | null {
     if (!('memory' in performance)) return null;
-
-    const memory = (performance as any).memory;
+    type PerformanceWithMemory = Performance & {
+      memory?: {
+        usedJSHeapSize: number;
+        totalJSHeapSize: number;
+        jsHeapSizeLimit: number;
+      };
+    };
+    const perf = performance as PerformanceWithMemory;
+    const memory = perf.memory as NonNullable<PerformanceWithMemory['memory']>;
     const memoryUsagePercentage = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
 
     return {
@@ -176,25 +183,37 @@ export class MemoryManager {
   }
 
   // Estima o tamanho de um recurso
-  private static estimateSize(data: any, type: ManagedResource['type']): number {
+  private static estimateSize(data: unknown, type: ManagedResource['type']): number {
     switch (type) {
       case 'audioBuffer':
-        if (data.length && data.numberOfChannels && data.sampleRate) {
-          return data.length * data.numberOfChannels * 4; // 4 bytes por sample (Float32)
+        {
+          const ab = data as { length?: number; numberOfChannels?: number; sampleRate?: number };
+          if (typeof ab.length === 'number' && typeof ab.numberOfChannels === 'number') {
+            return ab.length * ab.numberOfChannels * 4; // 4 bytes por sample (Float32)
+          }
         }
         return 0;
         
       case 'blob':
-        return data.size || 0;
+        {
+          const b = data as { size?: number };
+          return typeof b.size === 'number' ? b.size : 0;
+        }
         
       case 'canvas':
-        if (data.width && data.height) {
-          return data.width * data.height * 4; // 4 bytes por pixel (RGBA)
+        {
+          const c = data as { width?: number; height?: number };
+          if (typeof c.width === 'number' && typeof c.height === 'number') {
+            return c.width * c.height * 4; // 4 bytes por pixel (RGBA)
+          }
         }
         return 0;
         
       case 'imageData':
-        return data.data ? data.data.length : 0;
+        {
+          const id = data as { data?: { length: number } };
+          return id.data ? id.data.length : 0;
+        }
         
       default:
         return JSON.stringify(data).length * 2; // Estimativa UTF-16
@@ -212,10 +231,15 @@ export class MemoryManager {
           break;
           
         case 'canvas':
-          if (resource.data.getContext) {
-            const ctx = resource.data.getContext('2d');
-            if (ctx) {
-              ctx.clearRect(0, 0, resource.data.width, resource.data.height);
+          {
+            const c = resource.data as { getContext?: (contextId: string) => CanvasRenderingContext2D | null; width?: number; height?: number };
+            if (typeof c.getContext === 'function') {
+              const ctx = c.getContext('2d');
+              if (ctx) {
+                const w = typeof c.width === 'number' ? c.width : 0;
+                const h = typeof c.height === 'number' ? c.height : 0;
+                ctx.clearRect(0, 0, w, h);
+              }
             }
           }
           break;

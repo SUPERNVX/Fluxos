@@ -25,15 +25,19 @@ export default function App() {
     });
 
     // Verifica se jsmediatags está disponível globalmente antes de usá-lo
-    const jsmediatags = (window as any).jsmediatags;
+    type JsMediaTags = {
+      read: (file: File, config: { onSuccess: (tag: unknown) => void; onError: (error: unknown) => void }) => void;
+    };
+    const jsmediatags = (window as (Window & { jsmediatags?: JsMediaTags })).jsmediatags;
     if (jsmediatags && typeof jsmediatags.read === 'function') {
       jsmediatags.read(file, {
-        onSuccess: (tag: any) => {
+        onSuccess: (tag: unknown) => {
           let coverUrl = `https://picsum.photos/seed/${encodeURIComponent(file.name)}/300/300`;
           
           // Verifica se a imagem está disponível nas tags
-          if (tag.tags && tag.tags.picture) {
-            const { data, format } = tag.tags.picture;
+          const tags = (tag as { tags?: { title?: string; artist?: string; picture?: { data: Uint8Array | number[]; format: string } } }).tags;
+          if (tags && tags.picture) {
+            const { data, format } = tags.picture;
             let base64String = "";
             for (let i = 0; i < data.length; i++) {
               base64String += String.fromCharCode(data[i]);
@@ -43,12 +47,12 @@ export default function App() {
           
           // Atualiza apenas o track se as tags forem lidas com sucesso
           setTrack({
-            name: tag.tags?.title || file.name.replace(/\.[^/.]+$/, ""),
-            artist: tag.tags?.artist || 'Unknown Artist',
+            name: tags?.title || file.name.replace(/\.[^/.]+$/, ""),
+            artist: tags?.artist || 'Unknown Artist',
             coverUrl: coverUrl
           });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           console.warn("Could not read audio tags, using fallback.", error);
           // O track já está definido com valores padrão, então não precisa atualizar
         }

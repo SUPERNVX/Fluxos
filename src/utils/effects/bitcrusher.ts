@@ -18,7 +18,7 @@ export const createBitCrusher = (context: AudioContext | OfflineAudioContext, bi
   let currentBits = bits;
   let currentSampleRate = sampleRate;
   let counter = 0;
-  let lastValues = [0, 0]; // Para os dois canais (estéreo)
+  const lastValues = [0, 0]; // Para os dois canais (estéreo)
 
   // Função para criar a curva de bitcrushing
   const createBitcrushCurve = (bits: number, samples: number = 44100) => {

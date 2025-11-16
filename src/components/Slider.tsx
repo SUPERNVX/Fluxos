@@ -85,7 +85,7 @@ export const Slider = memo<{
     };
   }, [isDragging]);
 
-  const handleMouseDown = (_e: React.MouseEvent) => {
+  const handleMouseDown = () => {
     onPointerDown();
     setIsDragging(true);
   };

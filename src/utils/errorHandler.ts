@@ -4,14 +4,14 @@ export interface AppError {
   message: string;
   details?: string;
   timestamp: Date;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export class ErrorHandler {
   private static errors: AppError[] = [];
   private static listeners: ((error: AppError) => void)[] = [];
 
-  static logError(code: string, message: string, details?: string, context?: Record<string, any>): AppError {
+  static logError(code: string, message: string, details?: string, context?: Record<string, unknown>): AppError {
     const error: AppError = {
       code,
       message,

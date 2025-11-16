@@ -1,13 +1,14 @@
 import { useState, memo } from 'react';
+import type { PresetSettings } from '../types/audio';
 import { CloseIcon, TrashIcon } from './Icons';
 import { LanguageSelector } from './LanguageSelector';
 
 export const SettingsModal = memo<{
   isOpen: boolean;
   onClose: () => void;
-  presets: any[];
+  presets: Array<{ id: number; name: string; settings: PresetSettings }>;
   onSave: (name: string) => void;
-  onLoad: (settings: any, id: number) => void;
+  onLoad: (settings: PresetSettings) => void;
   onDelete: (id: number) => void;
 }>(({ isOpen, onClose, presets, onSave, onLoad, onDelete }) => {
   const [name, setName] = useState('');
@@ -76,7 +77,7 @@ export const SettingsModal = memo<{
                       <div className="flex gap-2">
 
                         <button 
-                          onClick={() => onLoad(preset.settings, preset.id)}
+                          onClick={() => onLoad(preset.settings)}
                           className="px-3 py-1 text-sm bg-zinc-200 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-200 font-semibold rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-500 transition-colors"
                         >
                           Load

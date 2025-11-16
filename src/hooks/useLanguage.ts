@@ -36,7 +36,7 @@ export const useLanguage = () => {
 
     try {
       // Dynamically import the language file
-      let resources: any;
+      let resources: Record<string, unknown>;
       
       switch (langCode) {
         case 'pt-BR':

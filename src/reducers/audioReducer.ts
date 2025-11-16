@@ -11,14 +11,14 @@ const updateEffect = (
   state: AudioState,
   effectGroup: keyof AudioState,
   effectName: string,
-  updates: Partial<any>
+  updates: Record<string, unknown>
 ): AudioState => {
   return {
     ...state,
     [effectGroup]: {
-      ...state[effectGroup] as any,
+      ...(state[effectGroup] as Record<string, unknown>),
       [effectName]: {
-        ...(state[effectGroup] as any)[effectName],
+        ...((state[effectGroup] as Record<string, unknown>)[effectName] as Record<string, unknown>),
         ...updates
       }
     }

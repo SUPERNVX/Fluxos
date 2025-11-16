@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
-import type { AudioNodes } from '../types/audio';
+import type { AudioNodes, FlangerEffect, TremoloEffect } from '../types/audio';
 import {
   AUDIO_CONFIG,
   DEFAULT_MODULATION,
@@ -312,8 +312,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
       if (node && typeof node === 'object' && 'disconnect' in node) {
         try {
           (node as AudioNode).disconnect();
-        } catch (e) {
-          // Ignore errors during disconnect
+        } catch (error) {
+          console.warn('Disconnect error:', error);
         }
       }
     });
@@ -324,7 +324,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (sourceNodeRef.current) {
       try {
         sourceNodeRef.current.stop();
-      } catch (e) {}
+      } catch (error) {
+        console.warn('Stop error:', error);
+      }
       sourceNodeRef.current = null;
     }
     
@@ -401,9 +403,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
     
     let currentNode: AudioNode = mainGain;
     
-    const connectEffect = (inputNode: AudioNode, effect: any, effectName: keyof AudioNodes) => {
+    type EffectMap = {
+      flanger: FlangerEffect;
+      tremolo: TremoloEffect;
+    };
+
+    const connectEffect = <K extends keyof EffectMap>(inputNode: AudioNode, effect: EffectMap[K], effectName: K) => {
       inputNode.connect(effect.input);
-      if (effect.dry) {
+      if ('dry' in effect && effect.dry) {
         inputNode.connect(effect.dry);
       }
       audioNodesRef.current[effectName] = effect;
@@ -551,7 +558,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (sourceNodeRef.current) {
       try {
         sourceNodeRef.current.stop();
-      } catch (e) {}
+      } catch (error) {
+        console.warn('Stop error:', error);
+      }
       sourceNodeRef.current = null;
     }
     
@@ -574,7 +583,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (!sourceNodeRef.current || !audioContextRef.current) return;
 
     const elapsed = (audioContextRef.current.currentTime - timeRef.current.start) * state.speed;
-    try { sourceNodeRef.current.stop(); } catch(e) {}
+    try { sourceNodeRef.current.stop(); } catch (error) { console.warn('Pause stop error:', error); }
     
     timeRef.current.pause = Math.min(
       timeRef.current.pause + elapsed,
@@ -588,7 +597,11 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     }
-    state.isPlaying ? pause() : play();
+    if (state.isPlaying) {
+      pause();
+    } else {
+      play();
+    }
   }, [state.isPlaying, play, pause]);
 
   const seek = useCallback(async (newProgress: number) => {
@@ -600,7 +613,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
     // Se estiver tocando, reinicia a reprodução na nova posição
     if (state.isPlaying) {
-      try { sourceNodeRef.current?.stop(); } catch(e) {}
+      try { sourceNodeRef.current?.stop(); } catch (error) { console.warn('Seek stop error:', error); }
       sourceNodeRef.current = null;
       await play();
     }
@@ -814,7 +827,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (sourceNodeRef.current) {
       try {
         sourceNodeRef.current.stop();
-      } catch(e) {}
+      } catch (error) {
+        console.warn('Stop error:', error);
+      }
       sourceNodeRef.current = null;
     }
     
@@ -840,7 +855,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     } else if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
+      const w = window as WindowWithWebkitAudio;
+      audioContextRef.current = new (window.AudioContext || w.webkitAudioContext!)();
     }
     
     audioFile.arrayBuffer().then(buffer => {
@@ -921,7 +938,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
       if (sourceNodeRef.current) {
         try {
           sourceNodeRef.current.stop();
-        } catch(e) {}
+        } catch (error) {
+          console.warn('Cleanup stop error:', error);
+        }
         sourceNodeRef.current = null;
       }
       
@@ -953,10 +972,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
   useEffect(() => {
     if (!state.eightD.enabled || !state.eightD.autoRotate || !state.isPlaying) return;
 
-    let intervalId: ReturnType<typeof setInterval>;
-    
-    // Atualiza a posição do panner a cada 50ms para animação suave
-    intervalId = setInterval(() => {
+    const intervalId: ReturnType<typeof setInterval> = setInterval(() => {
       eightDAngleRef.current = (eightDAngleRef.current + (state.eightD.rotationSpeed * 360 * 0.05)) % 360;
       dispatch({ type: 'SET_EIGHT_D_MANUAL_POSITION', value: eightDAngleRef.current });
     }, 50);
