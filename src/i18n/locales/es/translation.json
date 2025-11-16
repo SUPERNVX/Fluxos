@@ -31,20 +31,12 @@
     "distortionEffects": "Efectos de Distorsión",
     "spatialAudio": "Audio Espacial",
     "advancedSpatialAudio": "Audio Espacial Avanzado",
-    "compressor": "Compresor",
     "flanger": {
       "title": "Flanger",
       "rate": "Tasa",
       "depth": "Profundidad",
       "feedback": "Realimentación",
       "delay": "Retraso"
-    },
-    "phaser": {
-      "title": "Phaser",
-      "rate": "Tasa",
-      "depth": "Profundidad",
-      "stages": "Etapas",
-      "feedback": "Realimentación"
     },
     "tremolo": {
       "title": "Tremolo",
@@ -73,12 +65,6 @@
       "bits": "Bits",
       "sampleRate": "Frecuencia de Muestreo"
     },
-    "fuzz": {
-      "title": "Fuzz",
-      "amount": "Cantidad",
-      "tone": "Tono",
-      "gate": "Puerta"
-    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Tamaño de la Sala",
@@ -89,13 +75,6 @@
       "title": "Muffle",
       "sectionTitle": "Efecto Muffled",
       "intensity": "Intensidad"
-    },
-    "compressor": {
-      "title": "Compresor",
-      "threshold": "Umbral",
-      "ratio": "Relación",
-      "attack": "Ataque",
-      "release": "Liberación"
     },
     "reverbTypes": {
       "default": "Predeterminado",
@@ -142,15 +121,9 @@
     "amount": "Controla la intensidad del efecto de distorsión.",
     "tone": "Controla la respuesta de frecuencia del efecto.",
     "level": "Controla el nivel de salida del efecto.",
-    "gate": "Controla el umbral para el efecto de fuzz.",
-    "stages": "Controla el número de etapas de desplazamiento de fase.",
     "roomSize": "Controla el tamaño de la sala virtual.",
     "damping": "Controla la cantidad de amortiguación de alta frecuencia.",
     "width": "Controla la anchura estéreo del efecto.",
-    "intensity": "Controla la fuerza del efecto de muffle.",
-    "threshold": "Controla el nivel de entrada en el que comienza la compresión.",
-    "ratio": "Controla la relación de compresión.",
-    "attack": "Controla qué tan rápido se activa el compresor.",
-    "release": "Controla qué tan rápido se desactiva el compresor."
+    "intensity": "Controla la fuerza del efecto de muffle."
   }
 }

@@ -38,13 +38,6 @@
       "feedback": "Feedback",
       "delay": "Delay"
     },
-    "phaser": {
-      "title": "Phaser",
-      "rate": "Rate",
-      "depth": "Depth",
-      "stages": "Stages",
-      "feedback": "Feedback"
-    },
     "tremolo": {
       "title": "Tremolo",
       "rate": "Rate",
@@ -72,12 +65,6 @@
       "bits": "Bits",
       "sampleRate": "Sample Rate"
     },
-    "fuzz": {
-      "title": "Fuzz",
-      "amount": "Amount",
-      "tone": "Tone",
-      "gate": "Gate"
-    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Room Size",
@@ -88,13 +75,6 @@
       "title": "Muffle",
       "sectionTitle": "Muffled Effect",
       "intensity": "Intensity"
-    },
-    "compressor": {
-      "title": "Compressor",
-      "threshold": "Threshold",
-      "ratio": "Ratio",
-      "attack": "Attack",
-      "release": "Release"
     },
     "reverbTypes": {
       "default": "Default",
@@ -141,15 +121,9 @@
     "amount": "Controls the intensity of the distortion effect.",
     "tone": "Controls the frequency response of the effect.",
     "level": "Controls the output level of the effect.",
-    "gate": "Controls the threshold for the fuzz effect.",
-    "stages": "Controls the number of phase shift stages.",
     "roomSize": "Controls the size of the virtual room.",
     "damping": "Controls the amount of high frequency damping.",
     "width": "Controls the stereo width of the effect.",
-    "intensity": "Controls the strength of the muffle effect.",
-    "threshold": "Controls the input level at which compression begins.",
-    "ratio": "Controls the compression ratio.",
-    "attack": "Controls how quickly the compressor engages.",
-    "release": "Controls how quickly the compressor disengages."
+    "intensity": "Controls the strength of the muffle effect."
   }
 }

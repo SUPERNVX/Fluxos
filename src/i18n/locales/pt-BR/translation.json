@@ -38,13 +38,6 @@
       "feedback": "Realimentação",
       "delay": "Atraso"
     },
-    "phaser": {
-      "title": "Phaser",
-      "rate": "Taxa",
-      "depth": "Profundidade",
-      "stages": "Estágios",
-      "feedback": "Realimentação"
-    },
     "tremolo": {
       "title": "Tremolo",
       "rate": "Taxa",
@@ -72,12 +65,6 @@
       "bits": "Bits",
       "sampleRate": "Taxa de Amostragem"
     },
-    "fuzz": {
-      "title": "Fuzz",
-      "amount": "Quantidade",
-      "tone": "Tom",
-      "gate": "Gate"
-    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Tamanho do Ambiente",
@@ -88,13 +75,6 @@
       "title": "Muffle",
       "sectionTitle": "Efeito Muffled",
       "intensity": "Intensidade"
-    },
-    "compressor": {
-      "title": "Compressor",
-      "threshold": "Limiar",
-      "ratio": "Razão",
-      "attack": "Ataque",
-      "release": "Liberação"
     },
     "reverbTypes": {
       "default": "Padrão",
@@ -141,15 +121,9 @@
     "amount": "Controla a intensidade do efeito de distorção.",
     "tone": "Controla a resposta de frequência do efeito.",
     "level": "Controla o nível de saída do efeito.",
-    "gate": "Controla o limiar para o efeito de fuzz.",
-    "stages": "Controla o número de estágios de deslocamento de fase.",
     "roomSize": "Controla o tamanho do ambiente virtual.",
     "damping": "Controla a quantidade de amortecimento de alta frequência.",
     "width": "Controla a largura estéreo do efeito.",
-    "intensity": "Controla a força do efeito de muffle.",
-    "threshold": "Controla o nível de entrada em que a compressão começa.",
-    "ratio": "Controla a razão de compressão.",
-    "attack": "Controla a rapidez com que o compressor ativa.",
-    "release": "Controla a rapidez com que o compressor desativa."
+    "intensity": "Controla a força do efeito de muffle."
   }
 }

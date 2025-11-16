@@ -26,11 +26,6 @@ export const setFlangerDepth = (value: number) => ({ type: 'SET_FLANGER_DEPTH', 
 export const setFlangerFeedback = (value: number) => ({ type: 'SET_FLANGER_FEEDBACK', value } as const);
 export const setFlangerDelay = (value: number) => ({ type: 'SET_FLANGER_DELAY', value } as const);
 
-export const setPhaserEnabled = (value: boolean) => ({ type: 'SET_PHASER_ENABLED', value } as const);
-export const setPhaserRate = (value: number) => ({ type: 'SET_PHASER_RATE', value } as const);
-export const setPhaserDepth = (value: number) => ({ type: 'SET_PHASER_DEPTH', value } as const);
-export const setPhaserStages = (value: number) => ({ type: 'SET_PHASER_STAGES', value } as const);
-export const setPhaserFeedback = (value: number) => ({ type: 'SET_PHASER_FEEDBACK', value } as const);
 
 export const setTremoloEnabled = (value: boolean) => ({ type: 'SET_TREMOLO_ENABLED', value } as const);
 export const setTremoloRate = (value: number) => ({ type: 'SET_TREMOLO_RATE', value } as const);
@@ -52,10 +47,6 @@ export const setBitcrusherEnabled = (value: boolean) => ({ type: 'SET_BITCRUSHER
 export const setBitcrusherBits = (value: number) => ({ type: 'SET_BITCRUSHER_BITS', value } as const);
 export const setBitcrusherSampleRate = (value: number) => ({ type: 'SET_BITCRUSHER_SAMPLE_RATE', value } as const);
 
-export const setFuzzEnabled = (value: boolean) => ({ type: 'SET_FUZZ_ENABLED', value } as const);
-export const setFuzzAmount = (value: number) => ({ type: 'SET_FUZZ_AMOUNT', value } as const);
-export const setFuzzTone = (value: number) => ({ type: 'SET_FUZZ_TONE', value } as const);
-export const setFuzzGate = (value: number) => ({ type: 'SET_FUZZ_GATE', value } as const);
 
 // Spatial audio actions
 export const setBinauralEnabled = (value: boolean) => ({ type: 'SET_BINAURAL_ENABLED', value } as const);
@@ -69,12 +60,6 @@ export const setMuffleIntensity = (value: number) => ({ type: 'SET_MUFFLE_INTENS
 
 export const resetMuffledEffects = () => ({ type: 'RESET_MUFFLE_EFFECTS' } as const);
 
-// Compressor actions
-export const setCompressorEnabled = (value: boolean) => ({ type: 'SET_COMPRESSOR_ENABLED', value } as const);
-export const setCompressorThreshold = (value: number) => ({ type: 'SET_COMPRESSOR_THRESHOLD', value } as const);
-export const setCompressorRatio = (value: number) => ({ type: 'SET_COMPRESSOR_RATIO', value } as const);
-export const setCompressorAttack = (value: number) => ({ type: 'SET_COMPRESSOR_ATTACK', value } as const);
-export const setCompressorRelease = (value: number) => ({ type: 'SET_COMPRESSOR_RELEASE', value } as const);
 
 // Reset actions
 export const resetModulationEffects = () => ({ type: 'RESET_MODULATION_EFFECTS' } as const);

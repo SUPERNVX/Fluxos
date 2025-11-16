@@ -69,14 +69,12 @@ export default defineConfig({
           distortion: [
             './src/utils/effects/overdrive.ts',
             './src/utils/effects/distortion.ts',
-            './src/utils/effects/fuzz.ts',
             './src/utils/effects/bitcrusher.ts'
           ],
           
           // Chunk para efeitos de modulação
           modulation: [
             './src/utils/effects/flanger.ts',
-            './src/utils/effects/phaser.ts',
             './src/utils/effects/tremolo.ts',
             './src/utils/effects/lfo.ts'
           ],

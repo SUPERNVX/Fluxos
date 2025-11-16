@@ -41,8 +41,8 @@ export const EditorPage = memo<{
   }, [player, track.name]);
 
   const handleSavePreset = (name: string) => {
-    const { speed, reverb, volume, bass, eightD, spatialAudio, compressor } = player;
-    savePreset(name, { speed, reverb, volume, bass, eightD, spatialAudio, compressor });
+    const { speed, reverb, volume, bass, eightD, spatialAudio } = player;
+    savePreset(name, { speed, reverb, volume, bass, eightD, spatialAudio });
   };
 
   const handleLoadPreset = (settings: PresetSettings) => {
@@ -61,13 +61,6 @@ export const EditorPage = memo<{
       player.setBinauralWidth(settings.spatialAudio.binaural.width);
       player.setMuffleEnabled(settings.spatialAudio.muffle.enabled);
       player.setMuffleIntensity(settings.spatialAudio.muffle.intensity);
-    }
-    if (settings.compressor) {
-      player.setCompressorEnabled(settings.compressor.enabled);
-      player.setCompressorThreshold(settings.compressor.threshold);
-      player.setCompressorRatio(settings.compressor.ratio);
-      player.setCompressorAttack(settings.compressor.attack);
-      player.setCompressorRelease(settings.compressor.release);
     }
     setIsSettingsOpen(false);
   };

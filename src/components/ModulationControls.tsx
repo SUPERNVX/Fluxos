@@ -11,13 +11,6 @@ interface ModulationControlsProps {
       feedback: number;
       delay: number;
     };
-    phaser: {
-      enabled: boolean;
-      rate: number;
-      depth: number;
-      stages: number;
-      feedback: number;
-    };
     tremolo: {
       enabled: boolean;
       rate: number;
@@ -30,11 +23,6 @@ interface ModulationControlsProps {
   setFlangerDepth: (value: number) => void;
   setFlangerFeedback: (value: number) => void;
   setFlangerDelay: (value: number) => void;
-  setPhaserEnabled: (value: boolean) => void;
-  setPhaserRate: (value: number) => void;
-  setPhaserDepth: (value: number) => void;
-  setPhaserStages: (value: number) => void;
-  setPhaserFeedback: (value: number) => void;
   setTremoloEnabled: (value: boolean) => void;
   setTremoloRate: (value: number) => void;
   setTremoloDepth: (value: number) => void;
@@ -49,11 +37,6 @@ export const ModulationControls = memo<ModulationControlsProps>(({
   setFlangerDepth,
   setFlangerFeedback,
   setFlangerDelay,
-  setPhaserEnabled,
-  setPhaserRate,
-  setPhaserDepth,
-  setPhaserStages,
-  setPhaserFeedback,
   setTremoloEnabled,
   setTremoloRate,
   setTremoloDepth,
@@ -65,7 +48,7 @@ export const ModulationControls = memo<ModulationControlsProps>(({
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 flex items-center">
           Modulation
-          {(modulation.flanger.enabled || modulation.phaser.enabled || modulation.tremolo.enabled) && (
+          {(modulation.flanger.enabled || modulation.tremolo.enabled) && (
             <span className="ml-2 w-2 h-2 rounded-full bg-green-500"></span>
           )}
         </h4>
@@ -126,54 +109,6 @@ export const ModulationControls = memo<ModulationControlsProps>(({
         )}
       </div>
 
-      {/* Phaser */}
-      <div className="space-y-3">
-        <ToggleSwitch 
-          label="Phaser" 
-          checked={modulation.phaser.enabled} 
-          onChange={setPhaserEnabled} 
-        />
-        {modulation.phaser.enabled && (
-          <div className="ml-4 space-y-2">
-            <Slider 
-              label="Rate" 
-              value={modulation.phaser.rate} 
-              onChange={setPhaserRate} 
-              min={0.1} 
-              max={10} 
-              step={0.1} 
-              unit="Hz" 
-            />
-            <Slider 
-              label="Depth" 
-              value={modulation.phaser.depth} 
-              onChange={setPhaserDepth} 
-              min={0} 
-              max={100} 
-              step={1} 
-              unit="%" 
-            />
-            <Slider 
-              label="Stages" 
-              value={modulation.phaser.stages} 
-              onChange={setPhaserStages} 
-              min={4} 
-              max={12} 
-              step={1} 
-              unit="" 
-            />
-            <Slider 
-              label="Feedback" 
-              value={modulation.phaser.feedback} 
-              onChange={setPhaserFeedback} 
-              min={0} 
-              max={100} 
-              step={1} 
-              unit="%" 
-            />
-          </div>
-        )}
-      </div>
 
       {/* Tremolo */}
       <div className="space-y-3">

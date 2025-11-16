@@ -21,12 +21,6 @@ interface DistortionControlsProps {
       bits: number;
       sampleRate: number;
     };
-    fuzz: {
-      enabled: boolean;
-      amount: number;
-      tone: number;
-      gate: number;
-    };
   };
   setOverdriveEnabled: (value: boolean) => void;
   setOverdriveGain: (value: number) => void;
@@ -39,10 +33,6 @@ interface DistortionControlsProps {
   setBitcrusherEnabled: (value: boolean) => void;
   setBitcrusherBits: (value: number) => void;
   setBitcrusherSampleRate: (value: number) => void;
-  setFuzzEnabled: (value: boolean) => void;
-  setFuzzAmount: (value: number) => void;
-  setFuzzTone: (value: number) => void;
-  setFuzzGate: (value: number) => void;
   resetDistortionEffects: () => void;
 }
 
@@ -59,10 +49,6 @@ export const DistortionControls = memo<DistortionControlsProps>(({
   setBitcrusherEnabled,
   setBitcrusherBits,
   setBitcrusherSampleRate,
-  setFuzzEnabled,
-  setFuzzAmount,
-  setFuzzTone,
-  setFuzzGate,
   resetDistortionEffects,
 }) => {
   return (
@@ -70,7 +56,7 @@ export const DistortionControls = memo<DistortionControlsProps>(({
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-md font-semibold text-zinc-800 dark:text-zinc-100 flex items-center">
           Distortion
-          {(distortion.overdrive.enabled || distortion.distortion.enabled || distortion.bitcrusher.enabled || distortion.fuzz.enabled) && (
+          {(distortion.overdrive.enabled || distortion.distortion.enabled || distortion.bitcrusher.enabled) && (
             <span className="ml-2 w-2 h-2 rounded-full bg-green-500"></span>
           )}
         </h4>
@@ -193,45 +179,6 @@ export const DistortionControls = memo<DistortionControlsProps>(({
         )}
       </div>
 
-      {/* Fuzz */}
-      <div className="space-y-3">
-        <ToggleSwitch 
-          label="Fuzz" 
-          checked={distortion.fuzz.enabled} 
-          onChange={setFuzzEnabled} 
-        />
-        {distortion.fuzz.enabled && (
-          <div className="ml-4 space-y-2">
-            <Slider 
-              label="Amount" 
-              value={distortion.fuzz.amount} 
-              onChange={setFuzzAmount} 
-              min={0} 
-              max={100} 
-              step={1} 
-              unit="%" 
-            />
-            <Slider 
-              label="Tone" 
-              value={distortion.fuzz.tone} 
-              onChange={setFuzzTone} 
-              min={0} 
-              max={100} 
-              step={1} 
-              unit="%" 
-            />
-            <Slider 
-              label="Gate" 
-              value={distortion.fuzz.gate} 
-              onChange={setFuzzGate} 
-              min={0} 
-              max={100} 
-              step={1} 
-              unit="%" 
-            />
-          </div>
-        )}
-      </div>
 
     </div>
   );

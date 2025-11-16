@@ -4,7 +4,7 @@ export type Track = {
   coverUrl: string;
 };
 
-export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD' | 'spatialAudio' | 'compressor'>;
+export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD' | 'spatialAudio'>;
 
 export type AudioState = {
   isPlaying: boolean;
@@ -32,13 +32,6 @@ export type AudioState = {
       feedback: number; // 0-100%
       delay: number; // 0-20ms
     };
-    phaser: {
-      enabled: boolean;
-      rate: number; // 0.1-10 Hz
-      depth: number; // 0-100%
-      stages: number; // 4-12 stages
-      feedback: number; // 0-100%
-    };
     tremolo: {
       enabled: boolean;
       rate: number; // 0.1-20 Hz
@@ -65,12 +58,6 @@ export type AudioState = {
       bits: number; // 1-16 bits
       sampleRate: number; // 1000-44100 Hz
     };
-    fuzz: {
-      enabled: boolean;
-      amount: number; // 0-100%
-      tone: number; // 0-100%
-      gate: number; // 0-100%
-    };
   };
 
   // Espacialização Avançada
@@ -87,13 +74,6 @@ export type AudioState = {
     };
   };
 
-  compressor: {
-    enabled: boolean;
-    threshold: number; // dB
-    ratio: number;
-    attack: number; // s
-    release: number; // s
-  };
 };
 
 // Define types for audio effects
@@ -107,16 +87,6 @@ export type FlangerEffect = {
   updateFeedback: (feedback: number) => void;
 };
 
-export type PhaserEffect = {
-  input: AudioNode;
-  output: AudioNode;
-  dry: AudioNode;
-  lfo: OscillatorNode;
-  filters: BiquadFilterNode[];
-  updateRate: (rate: number) => void;
-  updateDepth: (depth: number) => void;
-  updateFeedback: (feedback: number) => void;
-};
 
 export type TremoloEffect = {
   input: AudioNode;
@@ -177,12 +147,10 @@ export type AudioNodes = {
   eightDWetGain?: GainNode;
   eightDDryGain?: GainNode;
   flanger?: FlangerEffect;
-  phaser?: PhaserEffect;
   tremolo?: TremoloEffect;
   overdrive?: DistortionEffect;
   distortion?: DistortionEffect;
   bitcrusher?: BitCrusherEffect;
-  fuzz?: FuzzEffect;
   binauralProcessor?: {
     convolver: ConvolverNode;
     gain: GainNode;
@@ -190,9 +158,6 @@ export type AudioNodes = {
   muffle?: BiquadFilterNode;
   muffleWetGain?: GainNode;
   muffleDryGain?: GainNode;
-  compressor?: DynamicsCompressorNode;
-  compressorWetGain?: GainNode;
-  compressorDryGain?: GainNode;
 
 };
 
@@ -217,11 +182,6 @@ export type AudioAction =
   | { type: 'SET_FLANGER_DEPTH'; value: number }
   | { type: 'SET_FLANGER_FEEDBACK'; value: number }
   | { type: 'SET_FLANGER_DELAY'; value: number }
-  | { type: 'SET_PHASER_ENABLED'; value: boolean }
-  | { type: 'SET_PHASER_RATE'; value: number }
-  | { type: 'SET_PHASER_DEPTH'; value: number }
-  | { type: 'SET_PHASER_STAGES'; value: number }
-  | { type: 'SET_PHASER_FEEDBACK'; value: number }
   | { type: 'SET_TREMOLO_ENABLED'; value: boolean }
   | { type: 'SET_TREMOLO_RATE'; value: number }
   | { type: 'SET_TREMOLO_DEPTH'; value: number }
@@ -238,10 +198,6 @@ export type AudioAction =
   | { type: 'SET_BITCRUSHER_ENABLED'; value: boolean }
   | { type: 'SET_BITCRUSHER_BITS'; value: number }
   | { type: 'SET_BITCRUSHER_SAMPLE_RATE'; value: number }
-  | { type: 'SET_FUZZ_ENABLED'; value: boolean }
-  | { type: 'SET_FUZZ_AMOUNT'; value: number }
-  | { type: 'SET_FUZZ_TONE'; value: number }
-  | { type: 'SET_FUZZ_GATE'; value: number }
 
   // Spatial Audio Actions
   | { type: 'SET_BINAURAL_ENABLED'; value: boolean }
@@ -251,11 +207,6 @@ export type AudioAction =
   | { type: 'SET_MUFFLE_ENABLED'; value: boolean }
   | { type: 'SET_MUFFLE_INTENSITY'; value: number }
   | { type: 'RESET_MUFFLE_EFFECTS' }
-  | { type: 'SET_COMPRESSOR_ENABLED'; value: boolean }
-  | { type: 'SET_COMPRESSOR_THRESHOLD'; value: number }
-  | { type: 'SET_COMPRESSOR_RATIO'; value: number }
-  | { type: 'SET_COMPRESSOR_ATTACK'; value: number }
-  | { type: 'SET_COMPRESSOR_RELEASE'; value: number }
   | { type: 'RESET_MODULATION_EFFECTS' }
   | { type: 'RESET_DISTORTION_EFFECTS' }
   | { type: 'RESET_SPATIAL_AUDIO_EFFECTS' }

@@ -31,20 +31,12 @@
     "distortionEffects": "Verzerrungseffekte",
     "spatialAudio": "Räumliches Audio",
     "advancedSpatialAudio": "Erweitertes Räumliches Audio",
-    "compressor": "Kompressor",
     "flanger": {
       "title": "Flanger",
       "rate": "Rate",
       "depth": "Tiefe",
       "feedback": "Feedback",
       "delay": "Verzögerung"
-    },
-    "phaser": {
-      "title": "Phaser",
-      "rate": "Rate",
-      "depth": "Tiefe",
-      "stages": "Stufen",
-      "feedback": "Feedback"
     },
     "tremolo": {
       "title": "Tremolo",
@@ -73,12 +65,6 @@
       "bits": "Bits",
       "sampleRate": "Abtastrate"
     },
-    "fuzz": {
-      "title": "Fuzz",
-      "amount": "Stärke",
-      "tone": "Klang",
-      "gate": "Gate"
-    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Raumgröße",
@@ -89,13 +75,6 @@
       "title": "Muffle",
       "sectionTitle": "Muffle-Effekt",
       "intensity": "Intensität"
-    },
-    "compressor": {
-      "title": "Kompressor",
-      "threshold": "Schwellenwert",
-      "ratio": "Verhältnis",
-      "attack": "Attacke",
-      "release": "Release"
     },
     "reverbTypes": {
       "default": "Standard",
@@ -142,15 +121,9 @@
     "amount": "Steuert die Intensität des Verzerrungseffekts.",
     "tone": "Steuert die Frequenzantwort des Effekts.",
     "level": "Steuert das Ausgabeverstärkungsniveau des Effekts.",
-    "gate": "Steuert den Schwellenwert für den Fuzz-Effekt.",
-    "stages": "Steuert die Anzahl der Phasenschiebestufen.",
     "roomSize": "Steuert die Größe des virtuellen Raums.",
     "damping": "Steuert die Menge an Hochfrequenzdämpfung.",
     "width": "Steuert die Stereobreite des Effekts.",
-    "intensity": "Steuert die Stärke des Muffle-Effekts.",
-    "threshold": "Steuert das Eingangsniveau, bei dem die Kompression beginnt.",
-    "ratio": "Steuert das Kompressionsverhältnis.",
-    "attack": "Steuert, wie schnell der Kompressor anspricht.",
-    "release": "Steuert, wie schnell der Kompressor abschaltet."
+    "intensity": "Steuert die Stärke des Muffle-Effekts."
   }
 }

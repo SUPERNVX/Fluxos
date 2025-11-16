@@ -1,10 +1,9 @@
 import type { AudioState, AudioAction } from '../types/audio';
-import { 
-  AUDIO_CONFIG, 
-  DEFAULT_MODULATION, 
-  DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO,
-  DEFAULT_COMPRESSOR
+import {
+  AUDIO_CONFIG,
+  DEFAULT_MODULATION,
+  DEFAULT_DISTORTION,
+  DEFAULT_SPATIAL_AUDIO
 } from '../constants/audioConfig';
 
 // Helper function to update specific effect
@@ -94,16 +93,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_FLANGER_DELAY':
       return updateEffect(state, 'modulation', 'flanger', { delay: action.value });
       
-    case 'SET_PHASER_ENABLED':
-      return updateEffect(state, 'modulation', 'phaser', { enabled: action.value });
-    case 'SET_PHASER_RATE':
-      return updateEffect(state, 'modulation', 'phaser', { rate: action.value });
-    case 'SET_PHASER_DEPTH':
-      return updateEffect(state, 'modulation', 'phaser', { depth: action.value });
-    case 'SET_PHASER_STAGES':
-      return updateEffect(state, 'modulation', 'phaser', { stages: action.value });
-    case 'SET_PHASER_FEEDBACK':
-      return updateEffect(state, 'modulation', 'phaser', { feedback: action.value });
       
     case 'SET_TREMOLO_ENABLED':
       return updateEffect(state, 'modulation', 'tremolo', { enabled: action.value });
@@ -140,14 +129,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'SET_BITCRUSHER_SAMPLE_RATE':
       return updateEffect(state, 'distortion', 'bitcrusher', { sampleRate: action.value });
       
-    case 'SET_FUZZ_ENABLED':
-      return updateEffect(state, 'distortion', 'fuzz', { enabled: action.value });
-    case 'SET_FUZZ_AMOUNT':
-      return updateEffect(state, 'distortion', 'fuzz', { amount: action.value });
-    case 'SET_FUZZ_TONE':
-      return updateEffect(state, 'distortion', 'fuzz', { tone: action.value });
-    case 'SET_FUZZ_GATE':
-      return updateEffect(state, 'distortion', 'fuzz', { gate: action.value });
 
       
 
@@ -194,17 +175,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         },
       };
 
-    // Compressor actions
-    case 'SET_COMPRESSOR_ENABLED':
-      return { ...state, compressor: { ...state.compressor, enabled: action.value } };
-    case 'SET_COMPRESSOR_THRESHOLD':
-      return { ...state, compressor: { ...state.compressor, threshold: action.value } };
-    case 'SET_COMPRESSOR_RATIO':
-      return { ...state, compressor: { ...state.compressor, ratio: action.value } };
-    case 'SET_COMPRESSOR_ATTACK':
-      return { ...state, compressor: { ...state.compressor, attack: action.value } };
-    case 'SET_COMPRESSOR_RELEASE':
-      return { ...state, compressor: { ...state.compressor, release: action.value } };
     
     // Reset Actions
     case 'RESET_MODULATION_EFFECTS':
@@ -235,7 +205,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         modulation: { ...DEFAULT_MODULATION },
         distortion: { ...DEFAULT_DISTORTION },
         spatialAudio: { ...DEFAULT_SPATIAL_AUDIO },
-        compressor: { ...DEFAULT_COMPRESSOR },
       };
       
     case 'NEW_TRACK_RESET':

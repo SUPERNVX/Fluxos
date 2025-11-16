@@ -41,14 +41,12 @@
 
 #### 🌊 Modulation Effects Suite
 - **Flanger**: Classic jet airplane effect with rate, depth, feedback, and delay controls
-- **Phaser**: Sweeping frequency filter with adjustable stages (4-12) and feedback
 - **Tremolo**: Volume modulation with multiple waveform shapes (sine, square, triangle, sawtooth)
 
 #### 🔥 Distortion & Saturation
 - **Overdrive**: Tube amplifier simulation with gain, tone, and level controls
 - **Distortion**: Aggressive digital distortion with amount, tone, and level adjustment
 - **Bitcrusher**: Digital lo-fi effect with bit depth (1-16) and sample rate (1K-44K Hz) control
-- **Fuzz**: Extreme saturation with amount, tone, and gate controls
 
 #### 🎧 Spatial Audio
 - **8D Audio**: Automatic rotation (0.1-2x speed) or manual positioning (0-360°)
@@ -208,7 +206,6 @@ We welcome contributions! Here's how you can help:
 
 ### Areas for Improvement
 - [ ] **Equalizer**: 10-band graphic equalizer with frequency response visualization
-- [ ] **Compressor**: Dynamic range compression with threshold, ratio, attack, and release controls
 - [ ] **Advanced Formats**: Import support for FLAC, OGG, and more export formats
 - [ ] **Automation**: Parameter envelope automation over time
 - [ ] **Audio Analysis**: Frequency spectrum visualization and analysis tools

@@ -14,7 +14,6 @@ const LoadingSpinner = () => (
 const LazyDistortionControls = lazy(() => import('./DistortionControls').then(module => ({ default: module.DistortionControls })));
 const LazyModulationControls = lazy(() => import('./ModulationControls').then(module => ({ default: module.ModulationControls })));
 const LazySpatialAudioControls = lazy(() => import('./SpatialAudioControls').then(module => ({ default: module.SpatialAudioControls })));
-const LazyCompressorControls = lazy(() => import('./CompressorControls').then(module => ({ default: module.CompressorControls })));
 const LazyEightDControls = lazy(() => import('./EightDControls').then(module => ({ default: module.EightDControls })));
 const LazyMuffledControls = lazy(() => import('./MuffledControls').then(module => ({ default: module.MuffledControls })));
 
@@ -34,7 +33,6 @@ const withLazyLoading = <P extends object>(
 export const DistortionControls = withLazyLoading(LazyDistortionControls);
 export const ModulationControls = withLazyLoading(LazyModulationControls);
 export const SpatialAudioControls = withLazyLoading(LazySpatialAudioControls);
-export const CompressorControls = withLazyLoading(LazyCompressorControls);
 export const EightDControls = withLazyLoading(LazyEightDControls);
 export const MuffledControls = withLazyLoading(LazyMuffledControls);
 
@@ -43,7 +41,6 @@ export const usePreloadComponents = () => {
   const preloadDistortion = () => import('./DistortionControls');
   const preloadModulation = () => import('./ModulationControls');
   const preloadSpatial = () => import('./SpatialAudioControls');
-  const preloadCompressor = () => import('./CompressorControls');
   const preloadEightD = () => import('./EightDControls');
   const preloadMuffled = () => import('./MuffledControls');
 
@@ -51,14 +48,12 @@ export const usePreloadComponents = () => {
     preloadDistortion,
     preloadModulation,
     preloadSpatial,
-    preloadCompressor,
     preloadEightD,
     preloadMuffled,
     preloadAll: () => {
       preloadDistortion();
       preloadModulation();
       preloadSpatial();
-      preloadCompressor();
       preloadEightD();
       preloadMuffled();
     }

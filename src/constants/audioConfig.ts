@@ -33,13 +33,6 @@ export const DEFAULT_MODULATION = {
     feedback: 50, // %
     delay: 5, // ms
   },
-  phaser: {
-    enabled: false,
-    rate: 0.8, // Hz
-    depth: 60, // %
-    stages: 6, // stages
-    feedback: 30, // %
-  },
   tremolo: {
     enabled: false,
     rate: 4, // Hz
@@ -67,12 +60,6 @@ export const DEFAULT_DISTORTION = {
     bits: 8, // bits
     sampleRate: 8000, // Hz
   },
-  fuzz: {
-    enabled: false,
-    amount: 70, // %
-    tone: 40, // %
-    gate: 20, // %
-  },
 } as const;
 
 
@@ -91,14 +78,6 @@ export const DEFAULT_SPATIAL_AUDIO = {
   },
 } as const;
 
-// Valores padrão para o compressor
-export const DEFAULT_COMPRESSOR = {
-  enabled: false,
-  threshold: -24, // dB
-  ratio: 12,
-  attack: 0.003, // s
-  release: 0.25, // s
-} as const;
 export const AUDIO_EFFECT_LIMITS = {
   // Speed
   SPEED: {

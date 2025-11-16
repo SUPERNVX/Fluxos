@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import type { AudioNodes } from '../types/audio';
-import { 
-  AUDIO_CONFIG, 
-  DEFAULT_MODULATION, 
-  DEFAULT_DISTORTION, 
-  DEFAULT_SPATIAL_AUDIO,
-  DEFAULT_COMPRESSOR
+import {
+  AUDIO_CONFIG,
+  DEFAULT_MODULATION,
+  DEFAULT_DISTORTION,
+  DEFAULT_SPATIAL_AUDIO
 } from '../constants/audioConfig';
 import { ErrorHandler, ERROR_CODES } from '../utils/errorHandler';
 import { MemoryManager } from '../utils/memoryManager';
@@ -13,12 +12,10 @@ import { bufferToWav } from '../utils/audioHelpers';
 import { audioReducer } from '../reducers/audioReducer';
 import {
   createFlangerEffect,
-  createPhaserEffect,
   createTremoloEffect,
   createBitCrusher,
   createOverdriveEffect,
   createDistortionEffect,
-  createFuzzEffect,
   createMuffleEffect
 } from '../utils/effects';
 import * as audioActions from '../actions/audioActions';
@@ -43,7 +40,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     modulation: { ...DEFAULT_MODULATION },
     distortion: { ...DEFAULT_DISTORTION },
     spatialAudio: { ...DEFAULT_SPATIAL_AUDIO, muffle: { enabled: false, intensity: 0 } },
-    compressor: { ...DEFAULT_COMPRESSOR },
   });
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() => 
@@ -419,10 +415,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
       const flanger = createFlangerEffect(ctx, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay);
       currentNode = connectEffect(currentNode, flanger, 'flanger');
     }
-    if (state.modulation.phaser.enabled) {
-      const phaser = createPhaserEffect(ctx, state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.stages, state.modulation.phaser.feedback);
-      currentNode = connectEffect(currentNode, phaser, 'phaser');
-    }
     if (state.modulation.tremolo.enabled) {
       const tremolo = createTremoloEffect(ctx, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape);
       currentNode = connectEffect(currentNode, tremolo, 'tremolo');
@@ -440,12 +432,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
       currentNode.connect(distortion.input);
       currentNode = distortion.output;
       audioNodesRef.current.distortion = distortion;
-    }
-    if (state.distortion.fuzz.enabled) {
-      const fuzz = createFuzzEffect(ctx, state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate);
-      currentNode.connect(fuzz.input);
-      currentNode = fuzz.output;
-      audioNodesRef.current.fuzz = fuzz;
     }
     if (state.distortion.bitcrusher.enabled) {
       const bitcrusher = createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
@@ -507,28 +493,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
     bassDryGain.connect(bassMerger);
     currentNode = bassMerger;
 
-    // --- Compressor Bypass Graph ---
-    const compressorInput = currentNode;
-    const compressor = ctx.createDynamicsCompressor();
-    const compressorWetGain = ctx.createGain();
-    const compressorDryGain = ctx.createGain();
-    const compressorMerger = ctx.createGain();
-    compressorWetGain.gain.value = state.compressor.enabled ? 1 : 0;
-    compressorDryGain.gain.value = state.compressor.enabled ? 0 : 1;
-
-    compressorInput.connect(compressor);
-    compressor.connect(compressorWetGain);
-    compressorWetGain.connect(compressorMerger);
-
-    compressorInput.connect(compressorDryGain);
-    compressorDryGain.connect(compressorMerger);
-    currentNode = compressorMerger;
 
     // Connect to destination
     currentNode.connect(ctx.destination);
 
-    audioNodesRef.current = { 
-      ...audioNodesRef.current, 
+    audioNodesRef.current = {
+      ...audioNodesRef.current,
       defaultConvolver,
       hallConvolver,
       roomConvolver,
@@ -538,7 +508,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       roomReverbGain,
       plateReverbGain,
       dryGain,
-      mainGain, 
+      mainGain,
       bassBoost,
       bassWetGain,
       bassDryGain,
@@ -547,10 +517,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       eightDDryGain,
       muffle: muffleFilter,
       muffleWetGain,
-      muffleDryGain,
-      compressor,
-      compressorWetGain,
-      compressorDryGain
+      muffleDryGain
     };
 
     if (preservePlayback && wasPlaying) {
@@ -565,13 +532,11 @@ export const useAudioPlayer = (audioFile: File | null) => {
     state.spatialAudio.binaural.enabled,
     // Include modulation effect enables
     state.modulation.flanger.enabled,
-    state.modulation.phaser.enabled,
     state.modulation.tremolo.enabled,
-    // Include distortion effect enables  
+    // Include distortion effect enables
     state.distortion.overdrive.enabled,
     state.distortion.distortion.enabled,
     state.distortion.bitcrusher.enabled,
-    state.distortion.fuzz.enabled,
     // Include the speed for the source node
     state.speed,
     createImpulseResponse,
@@ -703,11 +668,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
         currentNode.connect(flanger.input);
         currentNode = flanger.output;
       }
-      if (state.modulation.phaser.enabled) {
-        const phaser = createPhaserEffect(offlineCtx, state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.stages, state.modulation.phaser.feedback);
-        currentNode.connect(phaser.input);
-        currentNode = phaser.output;
-      }
       if (state.modulation.tremolo.enabled) {
         const tremolo = createTremoloEffect(offlineCtx, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape);
         currentNode.connect(tremolo.input);
@@ -724,11 +684,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
         const distortion = createDistortionEffect(offlineCtx, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level);
         currentNode.connect(distortion.input);
         currentNode = distortion.output;
-      }
-      if (state.distortion.fuzz.enabled) {
-        const fuzz = createFuzzEffect(offlineCtx, state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate);
-        currentNode.connect(fuzz.input);
-        currentNode = fuzz.output;
       }
       if (state.distortion.bitcrusher.enabled) {
         const bitcrusher = createBitCrusher(offlineCtx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
@@ -754,16 +709,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
         currentNode = muffleFilter;
       }
 
-      // === COMPRESSOR ===
-      if (state.compressor.enabled) {
-        const compressor = offlineCtx.createDynamicsCompressor();
-        compressor.threshold.setValueAtTime(state.compressor.threshold, 0);
-        compressor.ratio.setValueAtTime(state.compressor.ratio, 0);
-        compressor.attack.setValueAtTime(state.compressor.attack, 0);
-        compressor.release.setValueAtTime(state.compressor.release, 0);
-        currentNode.connect(compressor);
-        currentNode = compressor;
-      }
 
       // === REVERB AND FINAL CHAIN ===
       // Connect to reverb system
@@ -852,15 +797,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
   }, [
     state.speed, state.reverb, state.reverbType, state.volume, state.bass,
     state.modulation.flanger.enabled, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay,
-    state.modulation.phaser.enabled, state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.stages, state.modulation.phaser.feedback,
     state.modulation.tremolo.enabled, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
     state.distortion.overdrive.enabled, state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
     state.distortion.distortion.enabled, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
-    state.distortion.fuzz.enabled, state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
     state.distortion.bitcrusher.enabled, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
     state.spatialAudio.binaural.enabled, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping, state.spatialAudio.binaural.width,
     state.spatialAudio.muffle.enabled, state.spatialAudio.muffle.intensity,
-    state.compressor.enabled, state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release,
     createImpulseResponse, createBinauralImpulseResponse
   ]);
 
@@ -1124,12 +1066,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
       if (flanger.updateFeedback) flanger.updateFeedback(state.modulation.flanger.feedback);
     }
     
-    if (audioNodesRef.current.phaser) {
-      const phaser = audioNodesRef.current.phaser;
-      if (phaser.updateRate) phaser.updateRate(state.modulation.phaser.rate);
-      if (phaser.updateDepth) phaser.updateDepth(state.modulation.phaser.depth);
-      if (phaser.updateFeedback) phaser.updateFeedback(state.modulation.phaser.feedback);
-    }
     
     if (audioNodesRef.current.tremolo) {
       const tremolo = audioNodesRef.current.tremolo;
@@ -1161,16 +1097,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
       }
     }
     
-    if (audioNodesRef.current.fuzz) {
-      const fuzz = audioNodesRef.current.fuzz;
-      if (fuzz.updateAmount) fuzz.updateAmount(state.distortion.fuzz.amount);
-      if (fuzz.toneFilter) {
-        fuzz.toneFilter.frequency.linearRampToValueAtTime(500 + (state.distortion.fuzz.tone / 100) * 2000, now + rampTime);
-      }
-      if (fuzz.gateGain) {
-        fuzz.gateGain.gain.linearRampToValueAtTime(state.distortion.fuzz.gate / 100, now + rampTime);
-      }
-    }
     
     if (audioNodesRef.current.bitcrusher) {
       const bitcrusher = audioNodesRef.current.bitcrusher;
@@ -1231,22 +1157,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
       }
     }
 
-    // --- Compressor Bypass Logic ---
-    if (audioNodesRef.current.compressor && audioNodesRef.current.compressorWetGain && audioNodesRef.current.compressorDryGain) {
-      const compressor = state.compressor;
-      if (compressor.enabled) {
-        audioNodesRef.current.compressorWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
-        audioNodesRef.current.compressorDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
-
-        audioNodesRef.current.compressor.threshold.linearRampToValueAtTime(compressor.threshold, now + rampTime);
-        audioNodesRef.current.compressor.ratio.linearRampToValueAtTime(compressor.ratio, now + rampTime);
-        audioNodesRef.current.compressor.attack.linearRampToValueAtTime(compressor.attack, now + rampTime);
-        audioNodesRef.current.compressor.release.linearRampToValueAtTime(compressor.release, now + rampTime);
-      } else {
-        audioNodesRef.current.compressorWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
-        audioNodesRef.current.compressorDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
-      }
-    }
   }, [
     // Core parameters that affect real-time audio
     state.speed, state.reverb, state.reverbType, state.volume, state.bass,
@@ -1254,19 +1164,15 @@ export const useAudioPlayer = (audioFile: File | null) => {
     
     // Only include enabled effect parameters to avoid unnecessary re-renders
     state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
-    state.modulation.phaser.rate, state.modulation.phaser.depth, state.modulation.phaser.feedback,
     state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
     state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
     state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
-    state.distortion.fuzz.amount, state.distortion.fuzz.tone, state.distortion.fuzz.gate,
     state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
     state.spatialAudio.binaural.width, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping,
     state.spatialAudio.muffle.intensity,
-    state.compressor.threshold, state.compressor.ratio, state.compressor.attack, state.compressor.release,
     
     // Include enabled states to trigger re-render when effects are toggled
-    state.spatialAudio.muffle.enabled,
-    state.compressor.enabled
+    state.spatialAudio.muffle.enabled
   ]);
 
 
@@ -1294,11 +1200,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setFlangerDepth: (value: number) => dispatch(audioActions.setFlangerDepth(value)),
     setFlangerFeedback: (value: number) => dispatch(audioActions.setFlangerFeedback(value)),
     setFlangerDelay: (value: number) => dispatch(audioActions.setFlangerDelay(value)),
-    setPhaserEnabled: (value: boolean) => dispatch(audioActions.setPhaserEnabled(value)),
-    setPhaserRate: (value: number) => dispatch(audioActions.setPhaserRate(value)),
-    setPhaserDepth: (value: number) => dispatch(audioActions.setPhaserDepth(value)),
-    setPhaserStages: (value: number) => dispatch(audioActions.setPhaserStages(value)),
-    setPhaserFeedback: (value: number) => dispatch(audioActions.setPhaserFeedback(value)),
     setTremoloEnabled: (value: boolean) => dispatch(audioActions.setTremoloEnabled(value)),
     setTremoloRate: (value: number) => dispatch(audioActions.setTremoloRate(value)),
     setTremoloDepth: (value: number) => dispatch(audioActions.setTremoloDepth(value)),
@@ -1316,10 +1217,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setBitcrusherEnabled: (value: boolean) => dispatch(audioActions.setBitcrusherEnabled(value)),
     setBitcrusherBits: (value: number) => dispatch(audioActions.setBitcrusherBits(value)),
     setBitcrusherSampleRate: (value: number) => dispatch(audioActions.setBitcrusherSampleRate(value)),
-    setFuzzEnabled: (value: boolean) => dispatch(audioActions.setFuzzEnabled(value)),
-    setFuzzAmount: (value: number) => dispatch(audioActions.setFuzzAmount(value)),
-    setFuzzTone: (value: number) => dispatch(audioActions.setFuzzTone(value)),
-    setFuzzGate: (value: number) => dispatch(audioActions.setFuzzGate(value)),
     
     // Spatial Audio
     setBinauralEnabled: (value: boolean) => dispatch(audioActions.setBinauralEnabled(value)),
@@ -1330,12 +1227,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     setMuffleIntensity: (value: number) => dispatch(audioActions.setMuffleIntensity(value)),
     resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
 
-    // Compressor
-    setCompressorEnabled: (value: boolean) => dispatch(audioActions.setCompressorEnabled(value)),
-    setCompressorThreshold: (value: number) => dispatch(audioActions.setCompressorThreshold(value)),
-    setCompressorRatio: (value: number) => dispatch(audioActions.setCompressorRatio(value)),
-    setCompressorAttack: (value: number) => dispatch(audioActions.setCompressorAttack(value)),
-    setCompressorRelease: (value: number) => dispatch(audioActions.setCompressorRelease(value)),
     
     // Reset Functions
     resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),
@@ -1354,12 +1245,10 @@ export const useAudioPlayer = (audioFile: File | null) => {
   }, [
     // Parâmetros que afetam a conexão do grafo (enable/disabled states)
     state.modulation.flanger.enabled,
-    state.modulation.phaser.enabled,
     state.modulation.tremolo.enabled,
     state.distortion.overdrive.enabled,
     state.distortion.distortion.enabled,
     state.distortion.bitcrusher.enabled,
-    state.distortion.fuzz.enabled,
     state.spatialAudio.binaural.enabled,
     state.speed, // Re-build graph on speed change
   ]);

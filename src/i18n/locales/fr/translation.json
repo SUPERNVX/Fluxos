@@ -31,20 +31,12 @@
     "distortionEffects": "Effets de Distorsion",
     "spatialAudio": "Audio Spatial",
     "advancedSpatialAudio": "Audio Spatial Avancé",
-    "compressor": "Compresseur",
     "flanger": {
       "title": "Flanger",
       "rate": "Taux",
       "depth": "Profondeur",
       "feedback": "Retour",
       "delay": "Délai"
-    },
-    "phaser": {
-      "title": "Phaser",
-      "rate": "Taux",
-      "depth": "Profondeur",
-      "stages": "Étapes",
-      "feedback": "Retour"
     },
     "tremolo": {
       "title": "Trémolo",
@@ -73,12 +65,6 @@
       "bits": "Bits",
       "sampleRate": "Taux d'Échantillonnage"
     },
-    "fuzz": {
-      "title": "Fuzz",
-      "amount": "Quantité",
-      "tone": "Ton",
-      "gate": "Seuil"
-    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Taille de la Salle",
@@ -89,13 +75,6 @@
       "title": "Muffle",
       "sectionTitle": "Effet Muffled",
       "intensity": "Intensité"
-    },
-    "compressor": {
-      "title": "Compresseur",
-      "threshold": "Seuil",
-      "ratio": "Ratio",
-      "attack": "Attaque",
-      "release": "Relâche"
     },
     "reverbTypes": {
       "default": "Par Défaut",
@@ -142,15 +121,9 @@
     "amount": "Contrôle l'intensité de l'effet de distorsion.",
     "tone": "Contrôle la réponse en fréquence de l'effet.",
     "level": "Contrôle le niveau de sortie de l'effet.",
-    "gate": "Contrôle le seuil pour l'effet fuzz.",
-    "stages": "Contrôle le nombre d'étapes de déphasage.",
     "roomSize": "Contrôle la taille de la salle virtuelle.",
     "damping": "Contrôle la quantité d'atténuation des hautes fréquences.",
     "width": "Contrôle la largeur stéréo de l'effet.",
-    "intensity": "Contrôle la force de l'effet de mufflage.",
-    "threshold": "Contrôle le niveau d'entrée auquel la compression commence.",
-    "ratio": "Contrôle le ratio de compression.",
-    "attack": "Contrôle la rapidité d'activation du compresseur.",
-    "release": "Contrôle la rapidité de désactivation du compresseur."
+    "intensity": "Contrôle la force de l'effet de mufflage."
   }
 }

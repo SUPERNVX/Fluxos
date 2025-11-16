@@ -6,7 +6,6 @@ import { EightDControls } from './EightDControls';
 import { ModulationControls } from './ModulationControls';
 import { DistortionControls } from './DistortionControls';
 import { SpatialAudioControls } from './SpatialAudioControls';
-import { CompressorControls } from './CompressorControls';
 import { MuffledControls } from './MuffledControls';
 import { CollapsibleSection } from './CollapsibleSection';
 import { AUDIO_CONFIG } from '../constants/audioConfig';
@@ -22,14 +21,11 @@ export const AudioEffects = memo(({
                             player.eightD.enabled || 
                             player.spatialAudio.binaural.enabled || 
                             player.spatialAudio.muffle.enabled || 
-                            player.compressor.enabled || 
-                            player.modulation.flanger.enabled || 
-                            player.modulation.phaser.enabled || 
-                            player.modulation.tremolo.enabled || 
-                            player.distortion.overdrive.enabled || 
-                            player.distortion.distortion.enabled || 
-                            player.distortion.bitcrusher.enabled || 
-                            player.distortion.fuzz.enabled;
+                            player.modulation.flanger.enabled ||
+                            player.modulation.tremolo.enabled ||
+                            player.distortion.overdrive.enabled ||
+                            player.distortion.distortion.enabled ||
+                            player.distortion.bitcrusher.enabled;
 
   return (
     <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
@@ -89,9 +85,9 @@ export const AudioEffects = memo(({
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection 
-          title={t('audioEffects.modulationEffects')} 
-          activeIndicator={player.modulation.flanger.enabled || player.modulation.phaser.enabled || player.modulation.tremolo.enabled}
+        <CollapsibleSection
+          title={t('audioEffects.modulationEffects')}
+          activeIndicator={player.modulation.flanger.enabled || player.modulation.tremolo.enabled}
           defaultOpen={true}
           resetAction={player.resetModulationEffects}
         >
@@ -102,11 +98,6 @@ export const AudioEffects = memo(({
             setFlangerDepth={player.setFlangerDepth}
             setFlangerFeedback={player.setFlangerFeedback}
             setFlangerDelay={player.setFlangerDelay}
-            setPhaserEnabled={player.setPhaserEnabled}
-            setPhaserRate={player.setPhaserRate}
-            setPhaserDepth={player.setPhaserDepth}
-            setPhaserStages={player.setPhaserStages}
-            setPhaserFeedback={player.setPhaserFeedback}
             setTremoloEnabled={player.setTremoloEnabled}
             setTremoloRate={player.setTremoloRate}
             setTremoloDepth={player.setTremoloDepth}
@@ -115,9 +106,9 @@ export const AudioEffects = memo(({
           />
         </CollapsibleSection>
 
-        <CollapsibleSection 
-          title={t('audioEffects.distortionEffects')} 
-          activeIndicator={player.distortion.overdrive.enabled || player.distortion.distortion.enabled || player.distortion.bitcrusher.enabled || player.distortion.fuzz.enabled}
+        <CollapsibleSection
+          title={t('audioEffects.distortionEffects')}
+          activeIndicator={player.distortion.overdrive.enabled || player.distortion.distortion.enabled || player.distortion.bitcrusher.enabled}
           defaultOpen={true}
           resetAction={player.resetDistortionEffects}
         >
@@ -134,10 +125,6 @@ export const AudioEffects = memo(({
             setBitcrusherEnabled={player.setBitcrusherEnabled}
             setBitcrusherBits={player.setBitcrusherBits}
             setBitcrusherSampleRate={player.setBitcrusherSampleRate}
-            setFuzzEnabled={player.setFuzzEnabled}
-            setFuzzAmount={player.setFuzzAmount}
-            setFuzzTone={player.setFuzzTone}
-            setFuzzGate={player.setFuzzGate}
             resetDistortionEffects={player.resetDistortionEffects}
           />
         </CollapsibleSection>
@@ -179,20 +166,6 @@ export const AudioEffects = memo(({
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection 
-          title={t('audioEffects.compressor.title')} 
-          activeIndicator={player.compressor.enabled}
-          defaultOpen={false}
-        >
-          <CompressorControls
-            compressor={player.compressor}
-            setCompressorEnabled={player.setCompressorEnabled}
-            setCompressorThreshold={player.setCompressorThreshold}
-            setCompressorRatio={player.setCompressorRatio}
-            setCompressorAttack={player.setCompressorAttack}
-            setCompressorRelease={player.setCompressorRelease}
-          />
-        </CollapsibleSection>
       </div>
     </section>
   );
