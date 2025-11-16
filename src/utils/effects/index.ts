@@ -1,5 +1,4 @@
 export * from './lfo';
-export * from './delay';
 export * from './flanger';
 export * from './tremolo';
 export * from './waveshaper';

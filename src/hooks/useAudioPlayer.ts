@@ -10,14 +10,8 @@ import { ErrorHandler, ERROR_CODES } from '../utils/errorHandler';
 import { MemoryManager } from '../utils/memoryManager';
 import { bufferToWav } from '../utils/audioHelpers';
 import { audioReducer } from '../reducers/audioReducer';
-import {
-  createFlangerEffect,
-  createTremoloEffect,
-  createBitCrusher,
-  createOverdriveEffect,
-  createDistortionEffect,
-  createMuffleEffect
-} from '../utils/effects';
+import { createFlangerEffect, createTremoloEffect, createBitCrusher, createOverdriveEffect, createDistortionEffect, createMuffleEffect } from '../utils/effects';
+import { createImpulseResponse as makeImpulseResponse, createBinauralImpulseResponse as makeBinauralImpulseResponse } from '../utils/effects/reverb';
 import * as audioActions from '../actions/audioActions';
 
 export const useAudioPlayer = (audioFile: File | null) => {
@@ -56,97 +50,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
   const eightDAngleRef = useRef(0); // Para animação automática do 8D
 
   const createImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext, reverbType: 'default' | 'hall' | 'room' | 'plate' = 'default') => {
-    let duration, decay;
-    
-    switch(reverbType) {
-      case 'hall':
-        duration = 3.0; // Longer for concert hall
-        decay = 4.0;   // More pronounced decay
-        break;
-      case 'room':
-        duration = 1.0; // Shorter for room
-        decay = 2.0;   // Less decay
-        break;
-      case 'plate':
-        duration = 2.0; // Medium duration
-        decay = 3.0;   // Dense decay for plate-like effect
-        break;
-      default:
-        duration = AUDIO_CONFIG.REVERB_IMPULSE_DURATION;
-        decay = AUDIO_CONFIG.REVERB_IMPULSE_DECAY;
-    }
-    
-    const length = context.sampleRate * duration;
-    const impulse = context.createBuffer(2, length, context.sampleRate);
-    
-    for (let channel = 0; channel < 2; channel++) {
-      const data = impulse.getChannelData(channel);
-      for (let i = 0; i < length; i++) {
-        // Add some variation based on reverb type to simulate different acoustic characteristics
-        let value = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
-        
-        // For plate reverb, add some more metallic/dense characteristics
-        if (reverbType === 'plate') {
-          // Add some harmonics and reflections to simulate plate reverb
-          value *= 1.0 + 0.3 * Math.sin(i * 0.02);
-        }
-        
-        data[i] = value;
-      }
-    }
-    return impulse;
+    return makeImpulseResponse(context, reverbType);
   }, []);
 
   // Função específica para criar impulse response binaural com roomSize e damping
   const createBinauralImpulseResponse = useCallback((context: AudioContext | OfflineAudioContext, roomSize: number, damping: number) => {
-    // roomSize afeta a duração (0-100 -> 0.5-4.0 segundos)
-    const duration = 0.5 + (roomSize / 100) * 3.5;
-    // damping afeta o decay e a densidade das reflexões (0-100 -> 1.5-6.0)
-    const decay = 1.5 + (damping / 100) * 4.5;
-    
-    const length = context.sampleRate * duration;
-    const impulse = context.createBuffer(2, length, context.sampleRate);
-    
-    for (let channel = 0; channel < 2; channel++) {
-      const data = impulse.getChannelData(channel);
-      
-      // Diferenciação entre canais para efeito binaural mais realista
-      const channelDelay = channel === 0 ? 0 : Math.floor(context.sampleRate * 0.0006); // 0.6ms delay for right ear
-      
-      for (let i = 0; i < length; i++) {
-        let value = 0;
-        
-        // Early reflections baseadas no roomSize
-        const earlyReflectionCount = Math.floor(3 + (roomSize / 100) * 12);
-        for (let j = 0; j < earlyReflectionCount; j++) {
-          const reflectionDelay = Math.floor((j + 1) * (roomSize / 100) * 1000 + channelDelay);
-          if (i === reflectionDelay && i < length) {
-            const reflectionGain = Math.pow(0.7, j) * (1 - damping / 200);
-            value += (Math.random() * 2 - 1) * reflectionGain;
-          }
-        }
-        
-        // Late reverb tail com decay baseado no damping
-        const lateReverbStart = Math.floor(context.sampleRate * 0.05); // 50ms
-        if (i > lateReverbStart) {
-          const timeRatio = (i - lateReverbStart) / (length - lateReverbStart);
-          const dampingCurve = Math.pow(1 - timeRatio, decay);
-          const densityFactor = 1 + (damping / 100) * 2; // Mais damping = mais densidade
-          value += (Math.random() * 2 - 1) * dampingCurve * 0.3 * densityFactor;
-        }
-        
-        // HRTF simulation básica para diferenciação espacial
-        if (channel === 1) {
-          // Right ear: slight high-frequency attenuation
-          if (i > 0 && i < length - 1) {
-            value = value * 0.9 + (data[i-1] || 0) * 0.1;
-          }
-        }
-        
-        data[i] = Math.max(-1, Math.min(1, value));
-      }
-    }
-    return impulse;
+    return makeBinauralImpulseResponse(context, roomSize, damping);
   }, []);
 
   const generateWaveform = useCallback((buffer: AudioBuffer) => {

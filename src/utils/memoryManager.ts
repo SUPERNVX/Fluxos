@@ -149,10 +149,12 @@ export class MemoryManager {
       }
       
       const cleaned = this.performEmergencyCleanup();
-      console.log(`Limpeza de emergência: ${cleaned} recursos removidos (arquivo: ${fileSizeMB.toFixed(1)}MB)`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Limpeza de emergência: ${cleaned} recursos removidos (arquivo: ${fileSizeMB.toFixed(1)}MB)`);
+      }
     } else if (stats.memoryUsagePercentage > adjustedMaxUsage) {
       const cleaned = this.performAutoCleanup();
-      if (cleaned > 0) {
+      if (cleaned > 0 && process.env.NODE_ENV === 'development') {
         console.log(`Limpeza automática: ${cleaned} recursos removidos (uso: ${stats.memoryUsagePercentage.toFixed(1)}%)`);
       }
     }

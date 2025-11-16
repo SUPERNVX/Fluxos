@@ -34,3 +34,14 @@ export const bufferToWav = (buffer: AudioBuffer): Blob => {
   }
   return new Blob([view], { type: 'audio/wav' });
 };
+
+export const createWetDryBypass = (ctx: AudioContext | OfflineAudioContext) => {
+  const wetGain = ctx.createGain();
+  const dryGain = ctx.createGain();
+  const merger = ctx.createGain();
+  const applyEnabled = (enabled: boolean) => {
+    wetGain.gain.value = enabled ? 1 : 0;
+    dryGain.gain.value = enabled ? 0 : 1;
+  };
+  return { wetGain, dryGain, merger, applyEnabled };
+};

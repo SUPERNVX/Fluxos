@@ -81,14 +81,12 @@ export default defineConfig({
           
           // Chunk para efeitos espaciais
           spatial: [
-            './src/utils/effects/delay.ts',
             './src/utils/effects/muffle.ts',
             './src/utils/effects/waveshaper.ts'
           ],
           
           // Chunk para workers
           workers: [
-            './src/workers/audioRenderWorker.ts',
             './src/workers/waveformWorker.ts'
           ]
         },
