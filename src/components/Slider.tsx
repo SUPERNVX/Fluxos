@@ -1,53 +1,10 @@
 import { useState, memo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSliderTouchLock } from '../hooks/useSliderTouchLock';
 import { Tooltip } from './Tooltip';
 import { NumericInput } from './NumericInput';
 
-// Define tooltip text for different label types
-const getTooltipText = (label: string): string | null => {
-  switch(label) {
-    case 'Bits':
-      return 'Controls the bit depth reduction. Lower values create more digital distortion.';
-    case 'Sample Rate':
-      return 'Controls the sample rate reduction. Lower values create more aliasing and digital artifacts.';
-    case 'Rate':
-      return 'Controls the speed of the modulation effect.';
-    case 'Depth':
-      return 'Controls the intensity of the modulation effect.';
-    case 'Feedback':
-      return 'Controls the amount of signal fed back into the effect.';
-    case 'Delay':
-      return 'Controls the delay time before the effect is applied.';
-    case 'Amount':
-      return 'Controls the intensity of the distortion effect.';
-    case 'Tone':
-      return 'Controls the frequency response of the effect.';
-    case 'Level':
-      return 'Controls the output level of the effect.';
-    case 'Gate':
-      return 'Controls the threshold for the fuzz effect.';
-    case 'Stages':
-      return 'Controls the number of phase shift stages.';
-    case 'Room Size':
-      return 'Controls the size of the virtual room.';
-    case 'Damping':
-      return 'Controls the amount of high frequency damping.';
-    case 'Width':
-      return 'Controls the stereo width of the effect.';
-    case 'Intensity':
-      return 'Controls the strength of the muffle effect.';
-    case 'Threshold':
-      return 'Controls the input level at which compression begins.';
-    case 'Ratio':
-      return 'Controls the compression ratio.';
-    case 'Attack':
-      return 'Controls how quickly the compressor engages.';
-    case 'Release':
-      return 'Controls how quickly the compressor disengages.';
-    default:
-      return null;
-  }
-};
+// Optional tooltip key allows stable i18n regardless of label translation
 
 export const Slider = memo<{
   label: string;
@@ -57,18 +14,19 @@ export const Slider = memo<{
   max: number;
   step: number;
   unit: string;
-}>(({ label, value, onChange, min, max, step, unit }) => {
+  tooltipKey?: string;
+}>(({ label, value, onChange, min, max, step, unit, tooltipKey }) => {
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLInputElement>(null);
   const onPointerDown = useSliderTouchLock();
+  const { t } = useTranslation();
   const isValueValid = (value != null && value !== undefined && typeof value === 'number' && !isNaN(value));
   const safeValue = isValueValid ? value : 0;
   const percentage = ((safeValue - min) / (max - min)) * 100;
-  const displayValue = isValueValid
-    ? (label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(label === 'Speed' ? 1 : 0))
-    : '0';
+  const decimals = step < 0.1 ? 2 : step < 1 ? 1 : 0;
+  const displayValue = isValueValid ? value.toFixed(decimals) : '0';
     
-  const tooltipText = getTooltipText(label);
+  const tooltipText = tooltipKey ? t(tooltipKey) : null;
 
   useEffect(() => {
     const handleMouseUp = () => setIsDragging(false);
@@ -112,7 +70,6 @@ export const Slider = memo<{
             max={max}
             step={step}
             unit={unit}
-            label={label}
             className="w-28 h-10"
           />
         </div>

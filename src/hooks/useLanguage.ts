@@ -9,6 +9,8 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'ru', name: 'Русский' },
   { code: 'fr', name: 'Français' },
   { code: 'de', name: 'Deutsch' },
+  { code: 'zh-CN', name: '简体中文' },
+  { code: 'ja', name: '日本語' },
 ];
 
 // Custom hook for language switching with lazy loading
@@ -22,6 +24,7 @@ export const useLanguage = () => {
       // English is already loaded as default
       i18n.changeLanguage('en');
       setCurrentLanguage('en');
+      try { localStorage.setItem('fluxos-lang', 'en'); } catch (_ignore) { void _ignore; }
       return;
     }
 
@@ -54,10 +57,19 @@ export const useLanguage = () => {
         case 'de':
           resources = (await import('../i18n/locales/de/translation.json')).default;
           break;
-        default:
-          resources = (await import('../i18n/locales/en/translation.json')).default;
-          langCode = 'en';
+        case 'zh-CN':
+          resources = (await import('../i18n/locales/zh-CN/translation.json')).default;
           break;
+        case 'ja':
+          resources = (await import('../i18n/locales/ja/translation.json')).default;
+          break;
+        default:
+          langCode = 'en';
+          // No dynamic import for English to avoid bundler warning
+          i18n.changeLanguage('en');
+          setCurrentLanguage('en');
+          try { localStorage.setItem('fluxos-lang', 'en'); } catch (_ignore) { void _ignore; }
+          return;
       }
 
       // Add the translation resources to i18n
@@ -66,11 +78,13 @@ export const useLanguage = () => {
       // Change language
       i18n.changeLanguage(langCode);
       setCurrentLanguage(langCode);
+      try { localStorage.setItem('fluxos-lang', langCode); } catch (_ignore) { void _ignore; }
     } catch (error) {
       console.error(`Failed to load language: ${langCode}`, error);
       // Fallback to English if loading fails
       i18n.changeLanguage('en');
       setCurrentLanguage('en');
+      try { localStorage.setItem('fluxos-lang', 'en'); } catch (_ignore) { void _ignore; }
     } finally {
       setLoading(false);
     }
@@ -78,6 +92,24 @@ export const useLanguage = () => {
 
   // Update current language when i18n language changes
   useEffect(() => {
+    // Initialize from localStorage or browser language
+    try {
+      const saved = localStorage.getItem('fluxos-lang');
+      const preferred = saved || (navigator.languages?.[0] || navigator.language || 'en');
+      const normalized = preferred.startsWith('pt') ? 'pt-BR'
+        : preferred.startsWith('es') ? 'es'
+        : preferred.startsWith('ru') ? 'ru'
+        : preferred.startsWith('fr') ? 'fr'
+        : preferred.startsWith('de') ? 'de'
+        : preferred.startsWith('zh') ? 'zh-CN'
+        : preferred.startsWith('ja') ? 'ja'
+        : 'en';
+      if (normalized !== i18n.language) {
+        // Try to load resources if not English
+        loadLanguage(normalized);
+      }
+    } catch (_ignore) { void _ignore; }
+
     const handleLanguageChange = () => {
       setCurrentLanguage(i18n.language);
     };
@@ -87,7 +119,7 @@ export const useLanguage = () => {
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
-  }, []);
+  }, [loadLanguage]);
 
   return {
     currentLanguage,

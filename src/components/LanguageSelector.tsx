@@ -1,8 +1,10 @@
 import { memo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTranslation } from 'react-i18next';
 
 export const LanguageSelector = memo(() => {
   const { currentLanguage, availableLanguages, changeLanguage, loading } = useLanguage();
+  const { t } = useTranslation();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     changeLanguage(e.target.value);
@@ -11,7 +13,7 @@ export const LanguageSelector = memo(() => {
   return (
     <div className="flex items-center gap-2">
       <label htmlFor="language-select" className="text-sm text-zinc-700 dark:text-zinc-300">
-        Language:
+        {t('settings.language')}
       </label>
       <select
         id="language-select"

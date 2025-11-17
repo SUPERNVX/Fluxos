@@ -2,6 +2,7 @@ import { useState, memo } from 'react';
 import type { PresetSettings } from '../types/audio';
 import { CloseIcon, TrashIcon } from './Icons';
 import { LanguageSelector } from './LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 export const SettingsModal = memo<{
   isOpen: boolean;
@@ -11,6 +12,7 @@ export const SettingsModal = memo<{
   onLoad: (settings: PresetSettings) => void;
   onDelete: (id: number) => void;
 }>(({ isOpen, onClose, presets, onSave, onLoad, onDelete }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
 
 
@@ -27,7 +29,7 @@ export const SettingsModal = memo<{
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-light-bg dark:bg-dark-bg-secondary w-full max-w-md rounded-2xl shadow-2xl p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">Settings</h2>
+          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{t('settings.title')}</h2>
           <button onClick={onClose} className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
             <CloseIcon className="w-5 h-5" />
           </button>
@@ -36,13 +38,13 @@ export const SettingsModal = memo<{
         <div className="space-y-6">
           {/* Language Selector */}
           <div className="p-4 bg-zinc-100 dark:bg-zinc-700/50 rounded-lg">
-            <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Language</h3>
+            <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300 mb-3">{t('settings.language')}</h3>
             <LanguageSelector />
           </div>
 
           {/* Presets Section */}
           <div>
-            <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Presets</h3>
+            <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300 mb-3">{t('presets.title')}</h3>
             
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -50,7 +52,7 @@ export const SettingsModal = memo<{
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Preset name..."
+                  placeholder={t('presets.presetName')}
                   className="flex-1 bg-zinc-100 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <button 
@@ -58,7 +60,7 @@ export const SettingsModal = memo<{
                   className="px-4 py-2 bg-accent text-white font-semibold rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!name.trim()}
                 >
-                  Save
+                  {t('common.save')}
                 </button>
               </div>
             </div>
@@ -66,7 +68,7 @@ export const SettingsModal = memo<{
             <hr className="my-4 border-zinc-200 dark:border-zinc-700" />
 
             <div className="space-y-3">
-              <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300">Load Preset</h3>
+              <h3 className="text-md font-semibold text-zinc-700 dark:text-zinc-300">{t('presets.savePreset')}</h3>
               {presets.length > 0 ? (
                 <ul className="max-h-60 overflow-y-auto space-y-2 pr-2">
                   {presets.map(preset => (
@@ -80,7 +82,7 @@ export const SettingsModal = memo<{
                           onClick={() => onLoad(preset.settings)}
                           className="px-3 py-1 text-sm bg-zinc-200 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-200 font-semibold rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-500 transition-colors"
                         >
-                          Load
+                          {t('presets.load')}
                         </button>
                         <button 
                           onClick={() => onDelete(preset.id)}
@@ -93,7 +95,7 @@ export const SettingsModal = memo<{
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No saved presets.</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">{t('presets.noPresets')}</p>
               )}
             </div>
           </div>

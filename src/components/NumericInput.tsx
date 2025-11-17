@@ -7,18 +7,16 @@ interface NumericInputProps {
   max: number;
   step?: number;
   unit?: string;
-  label?: string;
   className?: string;
 }
 
-export const NumericInput = memo<NumericInputProps>(({
+export const NumericInput = memo<NumericInputProps>(({ 
   value,
   onChange,
   min,
   max,
   step = 1,
   unit = '',
-  label,
   className = ''
 }) => {
   const handleIncrement = useCallback(() => {
@@ -36,7 +34,8 @@ export const NumericInput = memo<NumericInputProps>(({
     }
   };
 
-  const displayValue = label === 'Speed' && step < 0.1 ? value.toFixed(2) : value.toFixed(0);
+  const decimals = step < 0.1 ? 2 : step < 1 ? 1 : 0;
+  const displayValue = value.toFixed(decimals);
 
   return (
     <div className={`flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden ${className}`}>

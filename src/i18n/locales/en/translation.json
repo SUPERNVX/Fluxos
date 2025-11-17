@@ -126,4 +126,24 @@
     "width": "Controls the stereo width of the effect.",
     "intensity": "Controls the strength of the muffle effect."
   }
+  ,
+  "errors": {
+    "title": "Error",
+    "codes": {
+      "FILE_UPLOAD_FAILED": "Failed to upload the file. Please try again.",
+      "FILE_TOO_LARGE": "File too large. Maximum size: 100MB.",
+      "INVALID_FILE_FORMAT": "Unsupported file format. Use MP3, WAV, OGG or M4A.",
+      "FILE_CORRUPTED": "File corrupted or invalid.",
+      "AUDIO_CONTEXT_FAILED": "Error initializing audio system.",
+      "AUDIO_DECODE_FAILED": "Error decoding audio file.",
+      "EFFECT_CREATION_FAILED": "Error creating audio effect.",
+      "WORKLET_LOAD_FAILED": "Error loading audio processor.",
+      "DOWNLOAD_FAILED": "Error downloading processed file.",
+      "RENDER_FAILED": "Error rendering audio for download.",
+      "OUT_OF_MEMORY": "Insufficient memory. Try a smaller file.",
+      "BUFFER_ALLOCATION_FAILED": "Memory allocation error.",
+      "NETWORK_ERROR": "Connection error. Check your internet.",
+      "TIMEOUT_ERROR": "Operation timed out. Please try again."
+    }
+  }
 }

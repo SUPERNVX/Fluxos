@@ -126,4 +126,6 @@
     "width": "Controla la anchura estéreo del efecto.",
     "intensity": "Controla la fuerza del efecto de muffle."
   }
+  ,
+  "errors": { "title": "Error" }
 }

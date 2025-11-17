@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2025-11-17
+
+### Added
+
+- Internationalization enhancements:
+  - New languages: `zh-CN` (Chinese, Simplified) and `ja` (Japanese)
+  - Language detection from browser preferences and persistence via `localStorage`
+  - UI internationalization for Language Selector, Settings Modal, Modulation and Distortion controls, and tooltips
+
+### Changed
+
+- Consolidated reverb utilities into `src/utils/effects/reverb.ts` and reused across real-time and offline pipelines
+- Cleaned up and standardized TypeScript typings across hooks and components (removed `any`, used `unknown` and specific effect types)
+- Slider and numeric formatting now based solely on `step` precision (independent of label text)
+- English resources loaded only statically to avoid bundler warning with dual import modes
+- `MemoryManager` logs gated to development environment to reduce noise in production
+
+### Fixed
+
+- Resolved speed slider display bug in non-English languages (value now reflects actual speed)
+- Eliminated `InvalidStateError` by tracking source start state and only calling `stop()` after a `start()`
+- Minor lint issues in hooks and components without changing bass boost intentional behavior
+
+### Removed
+
+- Unused files and references:
+  - `src/workers/audioRenderWorker.ts`
+  - `src/utils/effects/delay.ts`
+  - `src/types.ts`, `src/types/index.ts`
+  - `src/reducers/index.ts`
+  - `src/App.css`
+- Updated `vite.config.ts` manual chunks to remove deleted entries
+
 ## [1.0.0] - 2025-01-XX - 🎉 LANÇAMENTO OFICIAL
 
 ### 🚀 **PRIMEIRA VERSÃO ESTÁVEL DO FLUXOS**

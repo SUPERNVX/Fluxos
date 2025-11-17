@@ -1,0 +1,52 @@
+{
+  "common": {
+    "download": "ダウンロード",
+    "reset": "リセット",
+    "settings": "設定"
+  },
+  "audioEffects": {
+    "title": "オーディオ効果",
+    "speed": "スピード",
+    "reverb": "リバーブ",
+    "volume": "ボリューム",
+    "bassBoost": "低音強調",
+    "eightDAudio": "8Dオーディオ",
+    "basicEffects": "基本効果",
+    "modulationEffects": "モジュレーション効果",
+    "distortionEffects": "ディストーション効果",
+    "spatialAudio": "空間オーディオ",
+    "reverbTypes": {
+      "default": "デフォルト",
+      "hall": "ホール",
+      "room": "ルーム",
+      "plate": "プレート"
+    },
+    "flanger": { "title": "フランジャー", "rate": "レート", "depth": "深さ", "feedback": "フィードバック", "delay": "ディレイ" },
+    "tremolo": { "title": "トレモロ", "rate": "レート", "depth": "深さ", "shape": "波形", "sine": "サイン", "square": "スクエア", "triangle": "トライアングル", "sawtooth": "ノコギリ波" },
+    "overdrive": { "title": "オーバードライブ", "gain": "ゲイン", "tone": "トーン", "level": "レベル" },
+    "distortion": { "title": "ディストーション", "amount": "量", "tone": "トーン", "level": "レベル" },
+    "bitcrusher": { "title": "ビットクラッシャー", "bits": "ビット数", "sampleRate": "サンプルレート" },
+    "binaural": { "title": "バイノーラル", "roomSize": "ルームサイズ", "damping": "ダンピング", "width": "幅" },
+    "muffle": { "title": "ミュート", "sectionTitle": "ミュート効果", "intensity": "強度" }
+  },
+  "player": { "dropzoneSubtitle": "MP3、WAV、FLACなどに対応（最大100MB）" },
+  "presets": { "quickPresets": "クイックプリセット" },
+  "settings": { "title": "設定", "language": "言語" },
+  "tooltips": {
+    "bits": "ビット深度の低下を制御します。値が低いほどデジタル歪みが増えます。",
+    "sampleRate": "サンプルレートの低下を制御します。低いレートはエイリアシングとデジタルアーティファクトを生みます。",
+    "rate": "モジュレーション効果の速度を制御します。",
+    "depth": "モジュレーション効果の強度を制御します。",
+    "feedback": "フィードバック信号の量を制御します。",
+    "delay": "効果が適用される前の遅延時間を制御します。",
+    "amount": "ディストーション効果の強度を制御します。",
+    "tone": "効果の周波数特性を制御します。",
+    "level": "効果の出力レベルを制御します。",
+    "roomSize": "仮想ルームのサイズを制御します。",
+    "damping": "高周波のダンピング量を制御します。",
+    "width": "効果のステレオ幅を制御します。",
+    "intensity": "ミュート効果の強度を制御します。"
+  }
+  ,
+  "errors": { "title": "エラー" }
+}

@@ -45,6 +45,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  const sourceStartedRef = useRef<boolean>(false);
   const timeRef = useRef({ start: 0, pause: 0 });
   const animationFrameRef = useRef<number>(0);
   const eightDAngleRef = useRef(0); // Para animação automática do 8D
@@ -232,11 +233,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
     
     if (sourceNodeRef.current) {
       try {
-        sourceNodeRef.current.stop();
+        if (sourceStartedRef.current) {
+          sourceNodeRef.current.stop();
+        }
       } catch (error) {
         console.warn('Stop error:', error);
       }
       sourceNodeRef.current = null;
+      sourceStartedRef.current = false;
     }
     
     const source = ctx.createBufferSource();
@@ -440,6 +444,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
       timeRef.current.pause = Math.min(currentTime, audioBufferRef.current.duration);
       timeRef.current.start = ctx.currentTime;
       source.start(0, timeRef.current.pause);
+      sourceStartedRef.current = true;
     }
     
     return source;
@@ -466,11 +471,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
     // Se já temos um source ativo, paramos antes de criar um novo
     if (sourceNodeRef.current) {
       try {
-        sourceNodeRef.current.stop();
+        if (sourceStartedRef.current) {
+          sourceNodeRef.current.stop();
+        }
       } catch (error) {
         console.warn('Stop error:', error);
       }
       sourceNodeRef.current = null;
+      sourceStartedRef.current = false;
     }
     
     const source = await setupAudioGraph();
@@ -484,6 +492,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
 
     source.start(0, timeRef.current.pause);
+    sourceStartedRef.current = true;
     timeRef.current.start = audioContextRef.current.currentTime;
     dispatch({ type: 'SET_PLAYING', value: true });
   }, [setupAudioGraph]);
@@ -492,7 +501,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (!sourceNodeRef.current || !audioContextRef.current) return;
 
     const elapsed = (audioContextRef.current.currentTime - timeRef.current.start) * state.speed;
-    try { sourceNodeRef.current.stop(); } catch (error) { console.warn('Pause stop error:', error); }
+    try {
+      if (sourceNodeRef.current && sourceStartedRef.current) {
+        sourceNodeRef.current.stop();
+        sourceStartedRef.current = false;
+      }
+    } catch (error) { console.warn('Pause stop error:', error); }
     
     timeRef.current.pause = Math.min(
       timeRef.current.pause + elapsed,
@@ -522,7 +536,12 @@ export const useAudioPlayer = (audioFile: File | null) => {
 
     // Se estiver tocando, reinicia a reprodução na nova posição
     if (state.isPlaying) {
-      try { sourceNodeRef.current?.stop(); } catch (error) { console.warn('Seek stop error:', error); }
+      try {
+        if (sourceNodeRef.current && sourceStartedRef.current) {
+          sourceNodeRef.current.stop();
+          sourceStartedRef.current = false;
+        }
+      } catch (error) { console.warn('Seek stop error:', error); }
       sourceNodeRef.current = null;
       await play();
     }
@@ -735,11 +754,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
     // Aggressive cleanup of previous audio resources
     if (sourceNodeRef.current) {
       try {
-        sourceNodeRef.current.stop();
+        if (sourceStartedRef.current) {
+          sourceNodeRef.current.stop();
+        }
       } catch (error) {
         console.warn('Stop error:', error);
       }
       sourceNodeRef.current = null;
+      sourceStartedRef.current = false;
     }
     
     // Disconnect and clean up existing audio nodes
@@ -846,11 +868,14 @@ export const useAudioPlayer = (audioFile: File | null) => {
       // Stop any playing audio
       if (sourceNodeRef.current) {
         try {
-          sourceNodeRef.current.stop();
+          if (sourceStartedRef.current) {
+            sourceNodeRef.current.stop();
+          }
         } catch (error) {
           console.warn('Cleanup stop error:', error);
         }
         sourceNodeRef.current = null;
+        sourceStartedRef.current = false;
       }
       
       // Clean up all audio nodes

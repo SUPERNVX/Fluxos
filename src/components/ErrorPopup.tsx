@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ErrorHandler, AppError, ERROR_MESSAGES } from '../utils/errorHandler';
 
 interface ErrorPopupProps {
@@ -6,6 +7,7 @@ interface ErrorPopupProps {
 }
 
 const ErrorPopup: React.FC<ErrorPopupProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const [currentError, setCurrentError] = useState<AppError | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -34,7 +36,8 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ onClose }) => {
 
   if (!isVisible || !currentError) return null;
 
-  const errorMessage = ERROR_MESSAGES[currentError.code as keyof typeof ERROR_MESSAGES] || currentError.message;
+  const fallbackMessage = ERROR_MESSAGES[currentError.code as keyof typeof ERROR_MESSAGES] || currentError.message;
+  const errorMessage = t(`errors.codes.${currentError.code}`, { defaultValue: fallbackMessage });
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-md">
@@ -48,7 +51,7 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ onClose }) => {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium">
-                Erro
+                {t('errors.title')}
               </h3>
               <div className="mt-1 text-sm">
                 <p>{errorMessage}</p>
@@ -65,7 +68,7 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ onClose }) => {
               className="bg-red-500 rounded-md inline-flex text-red-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-500 focus:ring-white"
               onClick={handleClose}
             >
-              <span className="sr-only">Fechar</span>
+              <span className="sr-only">{t('common.close')}</span>
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>

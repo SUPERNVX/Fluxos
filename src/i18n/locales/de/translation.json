@@ -126,4 +126,6 @@
     "width": "Steuert die Stereobreite des Effekts.",
     "intensity": "Steuert die Stärke des Muffle-Effekts."
   }
+  ,
+  "errors": { "title": "Fehler" }
 }

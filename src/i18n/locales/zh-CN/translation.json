@@ -1,0 +1,52 @@
+{
+  "common": {
+    "download": "下载",
+    "reset": "重置",
+    "settings": "设置"
+  },
+  "audioEffects": {
+    "title": "音频效果",
+    "speed": "速度",
+    "reverb": "混响",
+    "volume": "音量",
+    "bassBoost": "低音增强",
+    "eightDAudio": "8D 音频",
+    "basicEffects": "基础效果",
+    "modulationEffects": "调制效果",
+    "distortionEffects": "失真效果",
+    "spatialAudio": "空间音频",
+    "reverbTypes": {
+      "default": "默认",
+      "hall": "大厅",
+      "room": "房间",
+      "plate": "板式"
+    },
+    "flanger": { "title": "镶边", "rate": "速率", "depth": "深度", "feedback": "反馈", "delay": "延迟" },
+    "tremolo": { "title": "颤音", "rate": "速率", "depth": "深度", "shape": "波形", "sine": "正弦", "square": "方波", "triangle": "三角", "sawtooth": "锯齿" },
+    "overdrive": { "title": "过载", "gain": "增益", "tone": "音色", "level": "电平" },
+    "distortion": { "title": "失真", "amount": "强度", "tone": "音色", "level": "电平" },
+    "bitcrusher": { "title": "位深压缩", "bits": "位深", "sampleRate": "采样率" },
+    "binaural": { "title": "双耳", "roomSize": "房间大小", "damping": "阻尼", "width": "宽度" },
+    "muffle": { "title": "闷音", "sectionTitle": "闷音效果", "intensity": "强度" }
+  },
+  "player": { "dropzoneSubtitle": "支持 MP3、WAV、FLAC 等格式（最大 100MB）" },
+  "presets": { "quickPresets": "快速预设" },
+  "settings": { "title": "设置", "language": "语言" },
+  "tooltips": {
+    "bits": "控制位深降低。较小的值会产生更多数字失真。",
+    "sampleRate": "控制采样率降低。较低采样率会产生混叠和数字伪影。",
+    "rate": "控制调制效果的速度。",
+    "depth": "控制调制效果的强度。",
+    "feedback": "控制反馈信号的量。",
+    "delay": "控制效果应用前的延迟时间。",
+    "amount": "控制失真效果的强度。",
+    "tone": "控制效果的频率响应。",
+    "level": "控制效果的输出电平。",
+    "roomSize": "控制虚拟房间的大小。",
+    "damping": "控制高频阻尼的程度。",
+    "width": "控制效果的立体宽度。",
+    "intensity": "控制闷音效果的强度。"
+  }
+  ,
+  "errors": { "title": "错误" }
+}

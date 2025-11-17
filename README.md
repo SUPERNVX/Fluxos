@@ -53,6 +53,11 @@
 - **Binaural Processing**: Advanced spatial positioning with room size, damping, and width controls
 - **Muffled Effect**: Frequency-based dampening with intensity control (0-100%)
 
+#### 🌐 Internationalization (i18n)
+- **Languages**: en, pt-BR, es, ru, fr, de, zh-CN, ja
+- **Detection & Persistence**: Auto-detects browser language and persists selection in localStorage
+- **Lazy Loading**: Loads non-English translations on demand to keep bundle smaller
+
 #### 🛠️ Advanced Features
 - **Real-time Waveform Visualization**: Interactive spectrogram with playback position
 - **Preset System**: Save and load effect configurations
@@ -120,14 +125,32 @@ src/
 │   ├── usePresets.ts
 │   └── useSliderTouchLock.ts
 ├── utils/         # Audio processing utilities and helpers
-│   ├── audioEffects.ts
+│   ├── effects/
+│   │   ├── flanger.ts
+│   │   ├── tremolo.ts
+│   │   ├── overdrive.ts
+│   │   ├── distortion.ts
+│   │   ├── bitcrusher.ts
+│   │   ├── muffle.ts
+│   │   ├── waveshaper.ts
+│   │   └── reverb.ts
 │   └── audioHelpers.ts
 ├── constants/      # Audio settings and effect defaults
 ├── types/         # TypeScript interfaces and types
 ├── reducers/      # State management for audio effects
 ├── workers/       # Web Worker implementations
-│   ├── waveformWorker.ts
-│   └── audioRenderWorker.ts
+│   └── waveformWorker.ts
+├── i18n/
+│   ├── locales/
+│   │   ├── en/translation.json
+│   │   ├── pt-BR/translation.json
+│   │   ├── es/translation.json
+│   │   ├── ru/translation.json
+│   │   ├── fr/translation.json
+│   │   ├── de/translation.json
+│   │   ├── zh-CN/translation.json
+│   │   └── ja/translation.json
+│   └── index.ts
 └── actions/       # Redux-style action creators
 ```
 
