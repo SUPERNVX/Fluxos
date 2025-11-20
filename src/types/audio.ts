@@ -147,17 +147,30 @@ export type AudioNodes = {
   eightDWetGain?: GainNode;
   eightDDryGain?: GainNode;
   flanger?: FlangerEffect;
+  flangerWetGain?: GainNode;
+  flangerDryGain?: GainNode;
   tremolo?: TremoloEffect;
+  tremoloWetGain?: GainNode;
+  tremoloDryGain?: GainNode;
   overdrive?: DistortionEffect;
+  overdriveWetGain?: GainNode;
+  overdriveDryGain?: GainNode;
   distortion?: DistortionEffect;
+  distortionWetGain?: GainNode;
+  distortionDryGain?: GainNode;
   bitcrusher?: BitCrusherEffect;
+  bitcrusherWetGain?: GainNode;
+  bitcrusherDryGain?: GainNode;
   binauralProcessor?: {
     convolver: ConvolverNode;
     gain: GainNode;
   };
+  binauralWetGain?: GainNode;
+  binauralDryGain?: GainNode;
   muffle?: BiquadFilterNode;
   muffleWetGain?: GainNode;
   muffleDryGain?: GainNode;
+  finalNode?: AudioNode;
 
 };
 

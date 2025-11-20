@@ -29,7 +29,7 @@
     "binaural": { "title": "バイノーラル", "roomSize": "ルームサイズ", "damping": "ダンピング", "width": "幅" },
     "muffle": { "title": "ミュート", "sectionTitle": "ミュート効果", "intensity": "強度" }
   },
-  "player": { "dropzoneSubtitle": "MP3、WAV、FLACなどに対応（最大100MB）" },
+  "player": { "dropzoneSubtitle": "音声・動画ファイルに対応（最大100MB）" },
   "presets": { "quickPresets": "クイックプリセット" },
   "settings": { "title": "設定", "language": "言語" },
   "tooltips": {

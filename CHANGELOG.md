@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.4.0] - 2025-11-18
+
+### Fixed
+
+- **Audio Player Core:**
+  - Fixed a critical bug where audio playback would restart from the beginning when pausing, resuming, or seeking. Playback position is now correctly maintained.
+  - Corrected an issue where most audio effects (including Modulation, Distortion, 8D, Bass Boost, Muffle, and Binaural) were not being applied in audio-only mode. All effects now function as expected.
+  - Reworked the audio graph to be static, preventing audio dropouts or graph reconstructions when toggling effects or changing their parameters.
+
+- **Video Download System:**
+  - Fixed a major bug where video downloads would get stuck in an infinite "rendering" state. The process is now robust and completes reliably.
+  - Implemented real-time progress reporting for video downloads, providing feedback to the user.
+  - Corrected an issue where downloaded videos were missing most audio effects. The final video now contains the fully processed audio.
+
+### Changed
+
+- **Performance:** Significantly improved the performance and stability of the audio processing pipeline by moving to a static audio graph architecture, eliminating unnecessary node reconstruction.
+- **Code Quality:** Refactored the `useAudioPlayer` and `useVideoPlayer` hooks to improve stability, correctness, and maintainability. Resolved all build and lint errors.
+
+## [3.3.0] - 2025-11-17
+
+### Added
+
+- **Video Mode:** Introduced full support for video file playback (`.mp4`, `.webm`, `.mov`).
+- **Video Audio Processing:** All existing audio effects (Reverb, Bass Boost, Flanger, Tremolo, Distortion, etc.) can now be applied in real-time to the audio track of video files.
+- **Video Preview:** A new 16:9 video preview component is displayed when a video is loaded.
+- **Video Download:** Added functionality to download the processed video, including all applied audio effects, as a WebM file.
+
+### Changed
+
+- **Player Engine:** The main editor page now dynamically switches between the audio player (`useAudioPlayer`) and a new video player hook (`useVideoPlayer`) based on file type.
+- **File Handling:** The file handler now accepts `video/mp4`, `video/quicktime`, and `video/webm` MIME types.
+- **Memory Management:** The `MemoryManager` was updated to be less aggressive with warnings for video files.
+
+### Fixed
+
+- **Audio Artifacts:** Disabled the browser's default pitch preservation on `<video>` elements to prevent unwanted audio artifacts when changing playback speed.
+
 ## [3.2.0] - 2025-11-17
 
 ### Added

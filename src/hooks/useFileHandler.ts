@@ -8,8 +8,8 @@ export const useFileHandler = () => {
   const handleFile = useCallback((file: File, onSelect: (file: File) => void) => {
     try {
       // Validate file type
-      const validTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/mp4', 'audio/m4a'];
-      if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+      const validTypes = ['audio/mpeg','audio/wav','audio/mp3','audio/ogg','audio/mp4','audio/m4a','video/mp4','video/quicktime','video/webm'];
+      if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a|mp4|mov|webm)$/i)) {
         ErrorHandler.logError(
           ERROR_CODES.INVALID_FILE_FORMAT,
           'Formato de arquivo não suportado',
@@ -30,14 +30,14 @@ export const useFileHandler = () => {
         return;
       }
 
-      // Set current file size for adaptive memory management
-      MemoryManager.setCurrentFileSize(file.size);
+      // Set current file metadata for adaptive memory management
+      MemoryManager.setCurrentFileMeta(file.size, file.type.startsWith('video/') ? 'video' : 'audio');
 
       // Check memory usage before processing (com thresholds adaptativos)
       const memoryStats = MemoryManager.checkMemoryUsage();
-      if (memoryStats && memoryStats.memoryUsagePercentage > 95) { // Threshold mais alto
+      const isVideo = file.type.startsWith('video/');
+      if (!isVideo && memoryStats && memoryStats.memoryUsagePercentage > 95) {
         const fileSizeMB = file.size / (1024 * 1024);
-        // Só mostra erro para arquivos > 70MB ou memória realmente crítica (>98%)
         if (fileSizeMB > 70 || memoryStats.memoryUsagePercentage > 98) {
           ErrorHandler.logError(
             ERROR_CODES.OUT_OF_MEMORY,
@@ -45,13 +45,15 @@ export const useFileHandler = () => {
             `Uso atual: ${memoryStats.memoryUsagePercentage.toFixed(1)}% | Arquivo: ${fileSizeMB.toFixed(1)}MB`,
             { fileName: file.name, fileSize: file.size, memoryUsage: memoryStats }
           );
+          return;
         }
-        return;
       }
 
       // Register file in memory manager
       const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      MemoryManager.registerResource(fileId, 'blob', file, file.size);
+      if (!isVideo) {
+        MemoryManager.registerResource(fileId, 'blob', file, file.size);
+      }
 
       onSelect(file);
     } catch (error) {

@@ -86,7 +86,7 @@
   "player": {
     "upload": "Enviar Arquivo de Áudio",
     "dropzoneText": "Arraste e solte seu arquivo de áudio aqui ou clique para selecionar",
-    "dropzoneSubtitle": "Suporta MP3, WAV, FLAC e outros formatos de áudio (máx. 100MB)",
+    "dropzoneSubtitle": "Suporta arquivos de áudio e vídeo (máx. 100MB)",
     "currentTime": "Tempo Atual",
     "duration": "Duração"
   },

@@ -86,7 +86,7 @@
   "player": {
     "upload": "Audiodatei hochladen",
     "dropzoneText": "Audiodatei hierher ziehen und ablegen oder zum Auswählen klicken",
-    "dropzoneSubtitle": "Unterstützt MP3, WAV, FLAC und andere Audioformate (max. 100 MB)",
+    "dropzoneSubtitle": "Unterstützt Audio- und Videodateien (max. 100 MB)",
     "currentTime": "Aktuelle Zeit",
     "duration": "Dauer"
   },

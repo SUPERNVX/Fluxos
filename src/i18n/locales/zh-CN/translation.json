@@ -29,7 +29,7 @@
     "binaural": { "title": "双耳", "roomSize": "房间大小", "damping": "阻尼", "width": "宽度" },
     "muffle": { "title": "闷音", "sectionTitle": "闷音效果", "intensity": "强度" }
   },
-  "player": { "dropzoneSubtitle": "支持 MP3、WAV、FLAC 等格式（最大 100MB）" },
+  "player": { "dropzoneSubtitle": "支持音频和视频文件（最大 100MB）" },
   "presets": { "quickPresets": "快速预设" },
   "settings": { "title": "设置", "language": "语言" },
   "tooltips": {

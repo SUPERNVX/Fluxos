@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
-import type { AudioNodes, FlangerEffect, TremoloEffect } from '../types/audio';
+import type { AudioNodes } from '../types/audio';
 import {
   AUDIO_CONFIG,
   DEFAULT_MODULATION,
@@ -138,381 +138,261 @@ export const useAudioPlayer = (audioFile: File | null) => {
     return panner;
   }, []);
 
+
+
   // Setup de nós básicos (não muda com os efeitos)
   const setupBasicAudioGraph = useCallback(() => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
 
-    // Cria os nós de efeito básico
+    Object.values(audioNodesRef.current).forEach(node => {
+      if (node && 'disconnect' in node) try { (node as AudioNode).disconnect(); } catch { /* intentionally ignored */ }
+      else if (node && 'input' in node) {
+        try { (node as {input: AudioNode, output: AudioNode}).input.disconnect(); } catch { /* intentionally ignored */ }
+        try { (node as {input: AudioNode, output: AudioNode}).output.disconnect(); } catch { /* intentionally ignored */ }
+      }
+    });
+    audioNodesRef.current = {};
+
     const mainGain = ctx.createGain();
-    mainGain.gain.value = 1; // Will be updated in real-time update effect
-    
-    // Cria convolvers para cada tipo de reverb
     const defaultConvolver = ctx.createConvolver();
     defaultConvolver.buffer = createImpulseResponse(ctx, 'default');
-    
     const hallConvolver = ctx.createConvolver();
     hallConvolver.buffer = createImpulseResponse(ctx, 'hall');
-    
     const roomConvolver = ctx.createConvolver();
     roomConvolver.buffer = createImpulseResponse(ctx, 'room');
-    
     const plateConvolver = ctx.createConvolver();
     plateConvolver.buffer = createImpulseResponse(ctx, 'plate');
-    
-    // Cria ganhos para cada tipo de reverb para permitir switching em tempo real
     const defaultReverbGain = ctx.createGain();
     const hallReverbGain = ctx.createGain();
     const roomReverbGain = ctx.createGain();
     const plateReverbGain = ctx.createGain();
-    
-    // Set initial values to 0, will be updated in real-time update effect
-    defaultReverbGain.gain.value = 0;
-    hallReverbGain.gain.value = 0;
-    roomReverbGain.gain.value = 0;
-    plateReverbGain.gain.value = 0;
-    
     const dryGain = ctx.createGain();
-    dryGain.gain.value = 1; // Will be updated in real-time update effect
 
-    const bassBoost = ctx.createBiquadFilter();
-    bassBoost.type = 'lowshelf';
-    bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0); // Initialize with current bass value
-
-    // Salva referências
     audioNodesRef.current = {
-      ...audioNodesRef.current,
-      defaultConvolver,
-      hallConvolver,
-      roomConvolver,
-      plateConvolver,
-      defaultReverbGain,
-      hallReverbGain,
-      roomReverbGain,
-      plateReverbGain,
+      mainGain, defaultConvolver, hallConvolver, roomConvolver, plateConvolver,
+      defaultReverbGain, hallReverbGain, roomReverbGain, plateReverbGain,
       dryGain,
-      mainGain,
-      bassBoost
     };
 
-    return { 
-      mainGain, 
-      defaultConvolver,
-      hallConvolver,
-      roomConvolver,
-      plateConvolver,
-      defaultReverbGain,
-      hallReverbGain,
-      roomReverbGain,
-      plateReverbGain,
-      dryGain, 
-      bassBoost 
-    };
-  }, [createImpulseResponse]); // Only depend on createImpulseResponse, not state values
+    defaultReverbGain.connect(defaultConvolver).connect(mainGain);
+    hallReverbGain.connect(hallConvolver).connect(mainGain);
+    roomReverbGain.connect(roomConvolver).connect(mainGain);
+    plateReverbGain.connect(plateConvolver).connect(mainGain);
+    dryGain.connect(mainGain);
+
+    let currentNode: AudioNode = mainGain;
+
+    // --- CADEIA DE EFEITOS COM BYPASS (Explícito) ---
+
+    // Flanger
+    {
+      const effectNode = createFlangerEffect(ctx, 0,0,0,0);
+      const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+      const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+      const merger = ctx.createGain();
+      currentNode.connect(effectNode.input);
+      effectNode.output.connect(wetGain);
+      currentNode.connect(dryGain);
+      wetGain.connect(merger);
+      dryGain.connect(merger);
+      currentNode = merger;
+      audioNodesRef.current.flanger = effectNode;
+      audioNodesRef.current.flangerWetGain = wetGain;
+      audioNodesRef.current.flangerDryGain = dryGain;
+    }
+    // Tremolo
+    {
+        const effectNode = createTremoloEffect(ctx, 0, 0, 'sine');
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode.input);
+        effectNode.output.connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.tremolo = effectNode;
+        audioNodesRef.current.tremoloWetGain = wetGain;
+        audioNodesRef.current.tremoloDryGain = dryGain;
+    }
+    // Overdrive
+    {
+        const effectNode = createOverdriveEffect(ctx, 0, 0, 0);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode.input);
+        effectNode.output.connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.overdrive = effectNode;
+        audioNodesRef.current.overdriveWetGain = wetGain;
+        audioNodesRef.current.overdriveDryGain = dryGain;
+    }
+    // Distortion
+    {
+        const effectNode = createDistortionEffect(ctx, 0, 0, 0);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode.input);
+        effectNode.output.connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.distortion = effectNode;
+        audioNodesRef.current.distortionWetGain = wetGain;
+        audioNodesRef.current.distortionDryGain = dryGain;
+    }
+    // Bitcrusher
+    {
+        const effectNode = createBitCrusher(ctx, 16, 44100);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode.input);
+        effectNode.output.connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.bitcrusher = effectNode;
+        audioNodesRef.current.bitcrusherWetGain = wetGain;
+        audioNodesRef.current.bitcrusherDryGain = dryGain;
+    }
+    // Muffle
+    {
+        const effectNode = createMuffleEffect(ctx, 0);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode).connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.muffle = effectNode;
+        audioNodesRef.current.muffleWetGain = wetGain;
+        audioNodesRef.current.muffleDryGain = dryGain;
+    }
+    // Binaural
+    {
+        const effectNode = { convolver: ctx.createConvolver(), gain: ctx.createGain() };
+        effectNode.convolver.buffer = createBinauralImpulseResponse(ctx, 0, 0);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode.convolver).connect(effectNode.gain).connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.binauralProcessor = effectNode;
+        audioNodesRef.current.binauralWetGain = wetGain;
+        audioNodesRef.current.binauralDryGain = dryGain;
+    }
+    // 8D
+    {
+        const effectNode = createEightDPanner(ctx);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode).connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.eightDPanner = effectNode;
+        audioNodesRef.current.eightDWetGain = wetGain;
+        audioNodesRef.current.eightDDryGain = dryGain;
+    }
+    // Bass Boost
+    {
+        const effectNode = ctx.createBiquadFilter();
+        effectNode.type = 'lowshelf';
+        effectNode.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0;
+        const dryGain = ctx.createGain(); dryGain.gain.value = 1;
+        const merger = ctx.createGain();
+        currentNode.connect(effectNode).connect(wetGain);
+        currentNode.connect(dryGain);
+        wetGain.connect(merger);
+        dryGain.connect(merger);
+        currentNode = merger;
+        audioNodesRef.current.bassBoost = effectNode;
+        audioNodesRef.current.bassWetGain = wetGain;
+        audioNodesRef.current.bassDryGain = dryGain;
+    }
+
+    currentNode.connect(ctx.destination);
+
+  }, [createImpulseResponse, createBinauralImpulseResponse, createEightDPanner]);
 
 
-
-  const setupAudioGraph = useCallback(async (preservePlayback = false) => {
+  const play = useCallback((offset: number = 0) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
     const ctx = audioContextRef.current;
-    
-    // Properly disconnect and clean up existing audio nodes before creating new ones
-    Object.values(audioNodesRef.current).forEach(node => {
-      if (node && typeof node === 'object' && 'disconnect' in node) {
-        try {
-          (node as AudioNode).disconnect();
-        } catch (error) {
-          console.warn('Disconnect error:', error);
-        }
-      }
-    });
-    
-    const wasPlaying = state.isPlaying;
-    const currentTime = timeRef.current.pause + (wasPlaying ? (ctx.currentTime - timeRef.current.start) * state.speed : 0);
-    
-    if (sourceNodeRef.current) {
+
+    if (sourceNodeRef.current && sourceStartedRef.current) {
       try {
-        if (sourceStartedRef.current) {
-          sourceNodeRef.current.stop();
-        }
-      } catch (error) {
-        console.warn('Stop error:', error);
+        sourceNodeRef.current.onended = null; // Prevent looping on manual stop
+        sourceNodeRef.current.stop();
+      } catch {
+        // Source may already be stopped, which is fine
       }
-      sourceNodeRef.current = null;
-      sourceStartedRef.current = false;
     }
-    
+    sourceStartedRef.current = false;
+
     const source = ctx.createBufferSource();
     source.buffer = audioBufferRef.current;
     source.playbackRate.value = state.speed;
     sourceNodeRef.current = source;
 
-    const mainGain = ctx.createGain();
-    mainGain.gain.value = 1;
+    // Connect to the graph entry points
+    const { dryGain, defaultReverbGain, hallReverbGain, roomReverbGain, plateReverbGain } = audioNodesRef.current;
+    if (dryGain) source.connect(dryGain);
+    if (defaultReverbGain) source.connect(defaultReverbGain);
+    if (hallReverbGain) source.connect(hallReverbGain);
+    if (roomReverbGain) source.connect(roomReverbGain);
+    if (plateReverbGain) source.connect(plateReverbGain);
     
-    const defaultConvolver = ctx.createConvolver();
-    defaultConvolver.buffer = createImpulseResponse(ctx, 'default');
+    const cappedOffset = Math.max(0, Math.min(offset, audioBufferRef.current.duration));
     
-    const hallConvolver = ctx.createConvolver();
-    hallConvolver.buffer = createImpulseResponse(ctx, 'hall');
-    
-    const roomConvolver = ctx.createConvolver();
-    roomConvolver.buffer = createImpulseResponse(ctx, 'room');
-    
-    const plateConvolver = ctx.createConvolver();
-    plateConvolver.buffer = createImpulseResponse(ctx, 'plate');
-    
-    const defaultReverbGain = ctx.createGain();
-    const hallReverbGain = ctx.createGain();
-    const roomReverbGain = ctx.createGain();
-    const plateReverbGain = ctx.createGain();
-    
-    defaultReverbGain.gain.value = 0;
-    hallReverbGain.gain.value = 0;
-    roomReverbGain.gain.value = 0;
-    plateReverbGain.gain.value = 0;
-    
-    const dryGain = ctx.createGain();
-    dryGain.gain.value = 1;
-
-    const bassBoost = ctx.createBiquadFilter();
-    bassBoost.type = 'lowshelf';
-    bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
-
-    // --- Bass bypass nodes ---
-    const bassWetGain = ctx.createGain();
-    const bassDryGain = ctx.createGain();
-    const bassMerger = ctx.createGain();
-    bassWetGain.gain.value = state.bass > 0 ? 1 : 0;
-    bassDryGain.gain.value = state.bass > 0 ? 0 : 1;
-
-    // --- 8D bypass nodes ---
-    const eightDPanner = createEightDPanner(ctx);
-    const eightDWetGain = ctx.createGain();
-    const eightDDryGain = ctx.createGain();
-    const eightDMerger = ctx.createGain();
-    eightDWetGain.gain.value = state.eightD.enabled ? 1 : 0;
-    eightDDryGain.gain.value = state.eightD.enabled ? 0 : 1;
-
-
-    source.connect(dryGain);
-    source.connect(defaultReverbGain);
-    source.connect(hallReverbGain);
-    source.connect(roomReverbGain);
-    source.connect(plateReverbGain);
-    
-    defaultReverbGain.connect(defaultConvolver);
-    hallReverbGain.connect(hallConvolver);
-    roomReverbGain.connect(roomConvolver);
-    plateReverbGain.connect(plateConvolver);
-    
-    defaultConvolver.connect(mainGain);
-    hallConvolver.connect(mainGain);
-    roomConvolver.connect(mainGain);
-    plateConvolver.connect(mainGain);
-    dryGain.connect(mainGain);
-    
-    let currentNode: AudioNode = mainGain;
-    
-    type EffectMap = {
-      flanger: FlangerEffect;
-      tremolo: TremoloEffect;
-    };
-
-    const connectEffect = <K extends keyof EffectMap>(inputNode: AudioNode, effect: EffectMap[K], effectName: K) => {
-      inputNode.connect(effect.input);
-      if ('dry' in effect && effect.dry) {
-        inputNode.connect(effect.dry);
+    source.onended = () => {
+      // Only loop if it was playing and not stopped manually
+      if (source === sourceNodeRef.current) {
+        timeRef.current.pause = 0;
+        play(0);
       }
-      audioNodesRef.current[effectName] = effect;
-      return effect.output;
     };
-
-    // === EFEITOS DE MODULAÇÃO ===
-    if (state.modulation.flanger.enabled) {
-      const flanger = createFlangerEffect(ctx, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay);
-      currentNode = connectEffect(currentNode, flanger, 'flanger');
-    }
-    if (state.modulation.tremolo.enabled) {
-      const tremolo = createTremoloEffect(ctx, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape);
-      currentNode = connectEffect(currentNode, tremolo, 'tremolo');
-    }
-
-    // === EFEITOS DE DISTORÇÃO ===
-    if (state.distortion.overdrive.enabled) {
-      const overdrive = createOverdriveEffect(ctx, state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level);
-      currentNode.connect(overdrive.input);
-      currentNode = overdrive.output;
-      audioNodesRef.current.overdrive = overdrive;
-    }
-    if (state.distortion.distortion.enabled) {
-      const distortion = createDistortionEffect(ctx, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level);
-      currentNode.connect(distortion.input);
-      currentNode = distortion.output;
-      audioNodesRef.current.distortion = distortion;
-    }
-    if (state.distortion.bitcrusher.enabled) {
-      const bitcrusher = createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
-      currentNode.connect(bitcrusher.input);
-      currentNode = bitcrusher.output;
-      audioNodesRef.current.bitcrusher = bitcrusher;
-    }
-
-    // === EFEITOS ESPACIAIS AVANÇADOS ===
-    if (state.spatialAudio.binaural.enabled) {
-      const binauralConvolver = ctx.createConvolver();
-      const binauralGain = ctx.createGain();
-      const binauralImpulse = createBinauralImpulseResponse(ctx, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
-      binauralConvolver.buffer = binauralImpulse;
-      binauralGain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, ctx.currentTime);
-      currentNode.connect(binauralConvolver);
-      binauralConvolver.connect(binauralGain);
-      currentNode = binauralGain;
-      audioNodesRef.current.binauralProcessor = { convolver: binauralConvolver, gain: binauralGain };
-    }
-
-    // --- Muffle Bypass Graph ---
-    const muffleInput = currentNode;
-    const muffleFilter = createMuffleEffect(ctx, state.spatialAudio.muffle.intensity);
-    const muffleWetGain = ctx.createGain();
-    const muffleDryGain = ctx.createGain();
-    const muffleMerger = ctx.createGain();
-    muffleWetGain.gain.value = state.spatialAudio.muffle.enabled ? 1 : 0;
-    muffleDryGain.gain.value = state.spatialAudio.muffle.enabled ? 0 : 1;
-
-    muffleInput.connect(muffleFilter);
-    muffleFilter.connect(muffleWetGain);
-    muffleWetGain.connect(muffleMerger);
-
-    muffleInput.connect(muffleDryGain);
-    muffleDryGain.connect(muffleMerger);
-    currentNode = muffleMerger;
-
-    // --- 8D Audio Bypass Graph ---
-    const eightDInput = currentNode;
-    // Wet path
-    eightDInput.connect(eightDPanner);
-    eightDPanner.connect(eightDWetGain);
-    eightDWetGain.connect(eightDMerger);
-    // Dry path
-    eightDInput.connect(eightDDryGain);
-    eightDDryGain.connect(eightDMerger);
-    currentNode = eightDMerger;
-
-
-    // --- Bass Boost Bypass Graph ---
-    const bassInput = currentNode;
-    // Wet path
-    bassInput.connect(bassBoost);
-    bassBoost.connect(bassWetGain);
-    bassWetGain.connect(bassMerger);
-    // Dry path
-    bassInput.connect(bassDryGain);
-    bassDryGain.connect(bassMerger);
-    currentNode = bassMerger;
-
-
-    // Connect to destination
-    currentNode.connect(ctx.destination);
-
-    audioNodesRef.current = {
-      ...audioNodesRef.current,
-      defaultConvolver,
-      hallConvolver,
-      roomConvolver,
-      plateConvolver,
-      defaultReverbGain,
-      hallReverbGain,
-      roomReverbGain,
-      plateReverbGain,
-      dryGain,
-      mainGain,
-      bassBoost,
-      bassWetGain,
-      bassDryGain,
-      eightDPanner,
-      eightDWetGain,
-      eightDDryGain,
-      muffle: muffleFilter,
-      muffleWetGain,
-      muffleDryGain
-    };
-
-    if (preservePlayback && wasPlaying) {
-      timeRef.current.pause = Math.min(currentTime, audioBufferRef.current.duration);
-      timeRef.current.start = ctx.currentTime;
-      source.start(0, timeRef.current.pause);
-      sourceStartedRef.current = true;
-    }
     
-    return source;
-  }, [
-    // Only include state properties that change the graph structure (enable/disable states)
-    state.spatialAudio.binaural.enabled,
-    // Include modulation effect enables
-    state.modulation.flanger.enabled,
-    state.modulation.tremolo.enabled,
-    // Include distortion effect enables
-    state.distortion.overdrive.enabled,
-    state.distortion.distortion.enabled,
-    state.distortion.bitcrusher.enabled,
-    // Include the speed for the source node
-    state.speed,
-    createImpulseResponse,
-    createBinauralImpulseResponse,
-    createEightDPanner
-  ]);
-
-  const play = useCallback(async () => {
-    if (!audioContextRef.current || !audioBufferRef.current) return;
-    
-    // Se já temos um source ativo, paramos antes de criar um novo
-    if (sourceNodeRef.current) {
-      try {
-        if (sourceStartedRef.current) {
-          sourceNodeRef.current.stop();
-        }
-      } catch (error) {
-        console.warn('Stop error:', error);
-      }
-      sourceNodeRef.current = null;
-      sourceStartedRef.current = false;
-    }
-    
-    const source = await setupAudioGraph();
-    if (!source) return;
-
-    const offset = Math.max(0, timeRef.current.pause);
-    if (offset >= audioBufferRef.current.duration) {
-      // Se o offset for maior que a duração, reinicia do início
-      timeRef.current.pause = 0;
-      timeRef.current.start = audioContextRef.current.currentTime;
-    }
-
-    source.start(0, timeRef.current.pause);
+    source.start(0, cappedOffset);
     sourceStartedRef.current = true;
-    timeRef.current.start = audioContextRef.current.currentTime;
+    timeRef.current.start = ctx.currentTime;
+    timeRef.current.pause = cappedOffset;
+
     dispatch({ type: 'SET_PLAYING', value: true });
-  }, [setupAudioGraph]);
+  }, [state.speed]);
 
   const pause = useCallback(() => {
-    if (!sourceNodeRef.current || !audioContextRef.current) return;
-
+    if (!sourceNodeRef.current || !audioContextRef.current || !sourceStartedRef.current) return;
+    
     const elapsed = (audioContextRef.current.currentTime - timeRef.current.start) * state.speed;
+    timeRef.current.pause += elapsed;
+
+    sourceNodeRef.current.onended = null; // Prevent looping on manual pause
     try {
-      if (sourceNodeRef.current && sourceStartedRef.current) {
-        sourceNodeRef.current.stop();
-        sourceStartedRef.current = false;
-      }
-    } catch (error) { console.warn('Pause stop error:', error); }
-    
-    timeRef.current.pause = Math.min(
-      timeRef.current.pause + elapsed,
-      audioBufferRef.current?.duration || 0
-    );
-    
+      sourceNodeRef.current.stop();
+    } catch {
+      // Ignore if already stopped
+    }
+    sourceStartedRef.current = false;
+
     dispatch({ type: 'SET_PLAYING', value: false });
   }, [state.speed]);
 
@@ -523,27 +403,19 @@ export const useAudioPlayer = (audioFile: File | null) => {
     if (state.isPlaying) {
       pause();
     } else {
-      play();
+      play(timeRef.current.pause);
     }
   }, [state.isPlaying, play, pause]);
 
-  const seek = useCallback(async (newProgress: number) => {
+  const seek = useCallback((newProgress: number) => {
     if (!audioBufferRef.current) return;
 
     const newTime = (newProgress / 100) * audioBufferRef.current.duration;
     timeRef.current.pause = newTime;
     dispatch({ type: 'SET_TIME', current: newTime, progress: newProgress });
 
-    // Se estiver tocando, reinicia a reprodução na nova posição
     if (state.isPlaying) {
-      try {
-        if (sourceNodeRef.current && sourceStartedRef.current) {
-          sourceNodeRef.current.stop();
-          sourceStartedRef.current = false;
-        }
-      } catch (error) { console.warn('Seek stop error:', error); }
-      sourceNodeRef.current = null;
-      await play();
+      play(newTime);
     }
   }, [state.isPlaying, play]);
 
@@ -768,12 +640,11 @@ export const useAudioPlayer = (audioFile: File | null) => {
     Object.values(audioNodesRef.current).forEach(node => {
       if (node && typeof node === 'object' && 'disconnect' in node) {
         const audioNode = node as AudioNode;
-        try {
-          audioNode.disconnect();
-        } catch (e) {
-          console.warn('Error disconnecting audio node:', e);
-        }
-      }
+                  try {
+                    audioNode.disconnect();
+                  } catch (error) {
+                    console.warn('Error disconnecting audio node:', error);
+                  }      }
     });
     
     // Clear all audio node references
@@ -884,8 +755,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
           const audioNode = node as AudioNode;
           try {
             audioNode.disconnect();
-          } catch (e) {
-            console.warn('Error disconnecting audio node during cleanup:', e);
+          } catch (error) {
+            console.warn('Error disconnecting audio node during cleanup:', error);
           }
         }
       });
@@ -963,167 +834,155 @@ export const useAudioPlayer = (audioFile: File | null) => {
     };
   }, [state.isPlaying, state.speed, play]);
 
-  // Update audio nodes em tempo real (consolidated)
+  // Update audio nodes em tempo real
+  const rampTime = 0.05;
+
+  // Update speed
   useEffect(() => {
-    if (!audioContextRef.current) return;
-    const ctx = audioContextRef.current;
-    const now = ctx.currentTime;
-    const rampTime = 0.05; // 50ms crossfade
-
     if (sourceNodeRef.current?.playbackRate) {
-      sourceNodeRef.current.playbackRate.setValueAtTime(state.speed, now);
+      const now = audioContextRef.current?.currentTime || 0;
+      sourceNodeRef.current.playbackRate.linearRampToValueAtTime(state.speed, now + rampTime);
     }
-    
-    if (audioNodesRef.current.defaultReverbGain && 
-        audioNodesRef.current.hallReverbGain && 
-        audioNodesRef.current.roomReverbGain && 
-        audioNodesRef.current.plateReverbGain && 
-        audioNodesRef.current.dryGain && 
-        audioNodesRef.current.mainGain) {
-      
-      audioNodesRef.current.defaultReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'default' ? state.reverb / 100 : 0, now + rampTime);
-      audioNodesRef.current.hallReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'hall' ? state.reverb / 100 : 0, now + rampTime);
-      audioNodesRef.current.roomReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'room' ? state.reverb / 100 : 0, now + rampTime);
-      audioNodesRef.current.plateReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'plate' ? state.reverb / 100 : 0, now + rampTime);
-      audioNodesRef.current.dryGain.gain.linearRampToValueAtTime(1 - (state.reverb / 100), now + rampTime);
-    }
-    
-    if (audioNodesRef.current.mainGain) {
-      audioNodesRef.current.mainGain.gain.linearRampToValueAtTime(state.volume / 100, now + rampTime);
-    }
-    
-    // --- Bass Boost Bypass Logic ---
-    if (audioNodesRef.current.bassBoost && audioNodesRef.current.bassWetGain && audioNodesRef.current.bassDryGain && state.bass != null) {
-      const bassGainValue = state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN;
-      audioNodesRef.current.bassBoost.gain.linearRampToValueAtTime(bassGainValue, now + rampTime);
+  }, [state.speed]);
+  
+  // Update Volume, Reverb
+  useEffect(() => {
+    const { mainGain, dryGain, defaultReverbGain, hallReverbGain, roomReverbGain, plateReverbGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !mainGain || !dryGain || !defaultReverbGain || !hallReverbGain || !roomReverbGain || !plateReverbGain) return;
+    const now = audioContextRef.current.currentTime;
+    mainGain.gain.linearRampToValueAtTime(state.volume / 100, now + rampTime);
+    const reverbValue = state.reverb / 100;
+    dryGain.gain.linearRampToValueAtTime(1 - reverbValue, now + rampTime);
+    defaultReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'default' ? reverbValue : 0, now + rampTime);
+    hallReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'hall' ? reverbValue : 0, now + rampTime);
+    roomReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'room' ? reverbValue : 0, now + rampTime);
+    plateReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'plate' ? reverbValue : 0, now + rampTime);
+  }, [state.volume, state.reverb, state.reverbType]);
 
-      if (state.bass > 0) {
-        // Activate effect: fade wet in, fade dry out
-        audioNodesRef.current.bassWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
-        audioNodesRef.current.bassDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
-      } else {
-        // Bypass effect: fade wet out, fade dry in
-        audioNodesRef.current.bassWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
-        audioNodesRef.current.bassDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
-      }
-    }
-    
-    // Modulation effects updates...
-    if (audioNodesRef.current.flanger) {
-      const flanger = audioNodesRef.current.flanger;
-      if (flanger.updateRate) flanger.updateRate(state.modulation.flanger.rate);
-      if (flanger.updateDepth) flanger.updateDepth(state.modulation.flanger.depth);
-      if (flanger.updateFeedback) flanger.updateFeedback(state.modulation.flanger.feedback);
-    }
-    
-    
-    if (audioNodesRef.current.tremolo) {
-      const tremolo = audioNodesRef.current.tremolo;
-      if (tremolo.updateRate) tremolo.updateRate(state.modulation.tremolo.rate);
-      if (tremolo.updateDepth) tremolo.updateDepth(state.modulation.tremolo.depth);
-      if (tremolo.updateShape) tremolo.updateShape(state.modulation.tremolo.shape);
-    }
-    
-    // Distortion effects updates...
-    if (audioNodesRef.current.overdrive) {
-      const overdrive = audioNodesRef.current.overdrive;
-      if (overdrive.updateAmount) overdrive.updateAmount(state.distortion.overdrive.gain);
-      if (overdrive.toneFilter) {
-        overdrive.toneFilter.frequency.linearRampToValueAtTime(1000 + (state.distortion.overdrive.tone / 100) * 4000, now + rampTime);
-      }
-      if (overdrive.levelGain) {
-        overdrive.levelGain.gain.linearRampToValueAtTime(state.distortion.overdrive.level / 100, now + rampTime);
-      }
-    }
-    
-    if (audioNodesRef.current.distortion) {
-      const distortion = audioNodesRef.current.distortion;
-      if (distortion.updateAmount) distortion.updateAmount(state.distortion.distortion.amount);
-      if (distortion.toneFilter) {
-        distortion.toneFilter.frequency.linearRampToValueAtTime(1000 + (state.distortion.distortion.tone / 100) * 4000, now + rampTime);
-      }
-      if (distortion.levelGain) {
-        distortion.levelGain.gain.linearRampToValueAtTime(state.distortion.distortion.level / 100, now + rampTime);
-      }
-    }
-    
-    
-    if (audioNodesRef.current.bitcrusher) {
-      const bitcrusher = audioNodesRef.current.bitcrusher;
-      if (bitcrusher.updateBits) bitcrusher.updateBits(state.distortion.bitcrusher.bits);
-      if (bitcrusher.updateSampleRate) bitcrusher.updateSampleRate(state.distortion.bitcrusher.sampleRate);
-    }
+  // Update Bass
+  useEffect(() => {
+    const { bassBoost, bassWetGain, bassDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !bassBoost || !bassWetGain || !bassDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    const bassGainValue = state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN;
+    bassBoost.gain.linearRampToValueAtTime(bassGainValue, now + rampTime);
+    const isBassActive = state.bass > 0;
+    bassWetGain.gain.linearRampToValueAtTime(isBassActive ? 1 : 0, now + rampTime);
+    bassDryGain.gain.linearRampToValueAtTime(isBassActive ? 0 : 1, now + rampTime);
+  }, [state.bass]);
+  
+  // Update Flanger
+  useEffect(() => {
+    const { flanger, flangerWetGain, flangerDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !flanger || !flangerWetGain || !flangerDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    flanger.updateRate?.(state.modulation.flanger.rate);
+    flanger.updateDepth?.(state.modulation.flanger.depth);
+    flanger.updateFeedback?.(state.modulation.flanger.feedback);
+    flangerWetGain.gain.linearRampToValueAtTime(state.modulation.flanger.enabled ? 1 : 0, now + rampTime);
+    flangerDryGain.gain.linearRampToValueAtTime(state.modulation.flanger.enabled ? 0 : 1, now + rampTime);
+  }, [state.modulation.flanger]);
+  
+  // Update Tremolo
+  useEffect(() => {
+    const { tremolo, tremoloWetGain, tremoloDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !tremolo || !tremoloWetGain || !tremoloDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    tremolo.updateRate?.(state.modulation.tremolo.rate);
+    tremolo.updateDepth?.(state.modulation.tremolo.depth);
+    tremolo.updateShape?.(state.modulation.tremolo.shape);
+    tremoloWetGain.gain.linearRampToValueAtTime(state.modulation.tremolo.enabled ? 1 : 0, now + rampTime);
+    tremoloDryGain.gain.linearRampToValueAtTime(state.modulation.tremolo.enabled ? 0 : 1, now + rampTime);
+  }, [state.modulation.tremolo]);
 
+  // Update Overdrive
+  useEffect(() => {
+    const { overdrive, overdriveWetGain, overdriveDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !overdrive || !overdriveWetGain || !overdriveDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    overdrive.updateAmount?.(state.distortion.overdrive.gain);
+    if(overdrive.toneFilter) overdrive.toneFilter.frequency.linearRampToValueAtTime(1000 + (state.distortion.overdrive.tone / 100) * 4000, now + rampTime);
+    if(overdrive.levelGain) overdrive.levelGain.gain.linearRampToValueAtTime(state.distortion.overdrive.level / 100, now + rampTime);
+    overdriveWetGain.gain.linearRampToValueAtTime(state.distortion.overdrive.enabled ? 1 : 0, now + rampTime);
+    overdriveDryGain.gain.linearRampToValueAtTime(state.distortion.overdrive.enabled ? 0 : 1, now + rampTime);
+  }, [state.distortion.overdrive]);
 
-    // Binaural real-time updates (recria o impulse response quando parâmetros mudam)
-    if (audioNodesRef.current.binauralProcessor && state.spatialAudio.binaural.enabled) {
-      const processor = audioNodesRef.current.binauralProcessor;
-      try {
-        const newImpulse = createBinauralImpulseResponse(audioContextRef.current!, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
-        processor.convolver.buffer = newImpulse;
-        processor.gain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, audioContextRef.current!.currentTime);
-      } catch (error) {
-        console.warn('Error updating binaural parameters:', error);
-      }
+  // Update Distortion
+  useEffect(() => {
+    const { distortion, distortionWetGain, distortionDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !distortion || !distortionWetGain || !distortionDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    distortion.updateAmount?.(state.distortion.distortion.amount);
+    if(distortion.toneFilter) distortion.toneFilter.frequency.linearRampToValueAtTime(1000 + (state.distortion.distortion.tone / 100) * 4000, now + rampTime);
+    if(distortion.levelGain) distortion.levelGain.gain.linearRampToValueAtTime(state.distortion.distortion.level / 100, now + rampTime);
+    distortionWetGain.gain.linearRampToValueAtTime(state.distortion.distortion.enabled ? 1 : 0, now + rampTime);
+    distortionDryGain.gain.linearRampToValueAtTime(state.distortion.distortion.enabled ? 0 : 1, now + rampTime);
+  }, [state.distortion.distortion]);
+
+  // Update Bitcrusher
+  useEffect(() => {
+    const { bitcrusher, bitcrusherWetGain, bitcrusherDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !bitcrusher || !bitcrusherWetGain || !bitcrusherDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    bitcrusher.updateBits?.(state.distortion.bitcrusher.bits);
+    bitcrusher.updateSampleRate?.(state.distortion.bitcrusher.sampleRate);
+    bitcrusherWetGain.gain.linearRampToValueAtTime(state.distortion.bitcrusher.enabled ? 1 : 0, now + rampTime);
+    bitcrusherDryGain.gain.linearRampToValueAtTime(state.distortion.bitcrusher.enabled ? 0 : 1, now + rampTime);
+  }, [state.distortion.bitcrusher]);
+  
+  // Update Muffle
+  useEffect(() => {
+    const { muffle, muffleWetGain, muffleDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !muffle || !muffleWetGain || !muffleDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    const { enabled, intensity } = state.spatialAudio.muffle;
+    muffleWetGain.gain.linearRampToValueAtTime(enabled ? 1 : 0, now + rampTime);
+    muffleDryGain.gain.linearRampToValueAtTime(enabled ? 0 : 1, now + rampTime);
+    if(enabled) {
+      const maxFreq = 12000;
+      const minFreq = 400;
+      const frequency = maxFreq - (intensity / 100) * (maxFreq - minFreq);
+      muffle.frequency.linearRampToValueAtTime(frequency, now + rampTime);
     }
+  }, [state.spatialAudio.muffle]);
+
+  // Update Binaural
+  useEffect(() => {
+    const { binauralProcessor, binauralWetGain, binauralDryGain } = audioNodesRef.current;
+    const { enabled, roomSize, damping, width } = state.spatialAudio.binaural;
     
-    // Spatial audio updates... (removido - já tratado acima)
+    if (!audioContextRef.current || !binauralProcessor || !binauralWetGain || !binauralDryGain) return;
+    const now = audioContextRef.current.currentTime;
 
-    // --- Muffle Bypass Logic ---
-    if (audioNodesRef.current.muffle && audioNodesRef.current.muffleWetGain && audioNodesRef.current.muffleDryGain) {
-      const muffle = state.spatialAudio.muffle;
-      if (muffle.enabled) {
-        audioNodesRef.current.muffleWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
-        audioNodesRef.current.muffleDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
-        
-        const maxFreq = 12000; // Começa a cortar mais cedo
-        const minFreq = 400;   // Corte final mais profundo
-        const frequency = maxFreq - (muffle.intensity / 100) * (maxFreq - minFreq);
-        audioNodesRef.current.muffle.frequency.linearRampToValueAtTime(frequency, now + rampTime);
-        audioNodesRef.current.muffle.Q.linearRampToValueAtTime(1.2, now + rampTime); // Q levemente aumentado
-
-      } else {
-        audioNodesRef.current.muffleWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
-        audioNodesRef.current.muffleDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
-      }
+    binauralWetGain.gain.linearRampToValueAtTime(enabled ? 1 : 0, now + rampTime);
+    binauralDryGain.gain.linearRampToValueAtTime(enabled ? 0 : 1, now + rampTime);
+    
+    if (enabled) {
+        try {
+            const newImpulse = createBinauralImpulseResponse(audioContextRef.current, roomSize, damping);
+            binauralProcessor.convolver.buffer = newImpulse;
+            binauralProcessor.gain.gain.setValueAtTime(width / 100, now);
+        } catch (error) {
+            console.warn('Error updating binaural parameters:', error);
+        }
     }
-    
-    // --- 8D Audio Bypass Logic ---
-    if (audioNodesRef.current.eightDPanner && audioNodesRef.current.eightDWetGain && audioNodesRef.current.eightDDryGain) {
-      if (state.eightD.enabled) {
-        audioNodesRef.current.eightDWetGain.gain.linearRampToValueAtTime(1, now + rampTime);
-        audioNodesRef.current.eightDDryGain.gain.linearRampToValueAtTime(0, now + rampTime);
+  }, [state.spatialAudio.binaural, createBinauralImpulseResponse]);
 
-        const angleInRadians = (state.eightD.manualPosition * Math.PI) / 180;
-        const x = Math.sin(angleInRadians);
-        const y = 0;
-        const z = Math.cos(angleInRadians);
-        audioNodesRef.current.eightDPanner.positionX.linearRampToValueAtTime(x, now + rampTime);
-        audioNodesRef.current.eightDPanner.positionY.linearRampToValueAtTime(y, now + rampTime);
-        audioNodesRef.current.eightDPanner.positionZ.linearRampToValueAtTime(z, now + rampTime);
-      } else {
-        audioNodesRef.current.eightDWetGain.gain.linearRampToValueAtTime(0, now + rampTime);
-        audioNodesRef.current.eightDDryGain.gain.linearRampToValueAtTime(1, now + rampTime);
-      }
+  // Update 8D
+  useEffect(() => {
+    const { eightDPanner, eightDWetGain, eightDDryGain } = audioNodesRef.current;
+    if (!audioContextRef.current || !eightDPanner || !eightDWetGain || !eightDDryGain) return;
+    const now = audioContextRef.current.currentTime;
+    const { enabled, manualPosition } = state.eightD;
+    eightDWetGain.gain.linearRampToValueAtTime(enabled ? 1 : 0, now + rampTime);
+    eightDDryGain.gain.linearRampToValueAtTime(enabled ? 0 : 1, now + rampTime);
+    if(enabled) {
+      const angleInRadians = (manualPosition * Math.PI) / 180;
+      eightDPanner.positionX.linearRampToValueAtTime(Math.sin(angleInRadians), now + rampTime);
+      eightDPanner.positionY.linearRampToValueAtTime(0, now + rampTime);
+      eightDPanner.positionZ.linearRampToValueAtTime(Math.cos(angleInRadians), now + rampTime);
     }
-
-  }, [
-    // Core parameters that affect real-time audio
-    state.speed, state.reverb, state.reverbType, state.volume, state.bass,
-    state.eightD.enabled, state.eightD.manualPosition,
-    
-    // Only include enabled effect parameters to avoid unnecessary re-renders
-    state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback,
-    state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape,
-    state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level,
-    state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level,
-    state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate,
-    state.spatialAudio.binaural.width, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping,
-    state.spatialAudio.muffle.intensity,
-    
-    // Include enabled states to trigger re-render when effects are toggled
-    state.spatialAudio.muffle.enabled
-  ]);
+  }, [state.eightD.enabled, state.eightD.manualPosition]);
 
 
 
@@ -1185,23 +1044,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     resetSpatialAudioEffects: () => dispatch(audioActions.resetSpatialAudioEffects()),
   };
 
-  // Recria o grafo quando efeitos são habilitados/desabilitados (otimização)
-  useEffect(() => {
-    // Só reconstrói o grafo se o contexto estiver ativo e tivermos um arquivo de áudio
-    if (audioContextRef.current && audioBufferRef.current) {
-      // Reconstrói o grafo mantendo a reprodução atual
-      setupAudioGraph(true);
-    }
-  }, [
-    // Parâmetros que afetam a conexão do grafo (enable/disabled states)
-    state.modulation.flanger.enabled,
-    state.modulation.tremolo.enabled,
-    state.distortion.overdrive.enabled,
-    state.distortion.distortion.enabled,
-    state.distortion.bitcrusher.enabled,
-    state.spatialAudio.binaural.enabled,
-    state.speed, // Re-build graph on speed change
-  ]);
+  // Não reconstrói o grafo em toggles; usamos bypass com ganhos em tempo real
 
   return {
     ...state,

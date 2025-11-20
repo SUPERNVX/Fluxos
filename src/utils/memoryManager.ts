@@ -22,6 +22,7 @@ export class MemoryManager {
   private static cleanupThreshold = 0.95; // 95% do limite (muito mais tolerante)
   private static maxResourceAge = 10 * 60 * 1000; // 10 minutos (mais tempo antes da limpeza)
   private static currentFileSize = 0; // Track do tamanho do arquivo atual
+  private static currentFileType: 'audio' | 'video' | 'unknown' = 'unknown';
 
   // Registra um recurso para gerenciamento
   static registerResource(
@@ -111,6 +112,11 @@ export class MemoryManager {
     this.currentFileSize = sizeInBytes;
   }
 
+  static setCurrentFileMeta(sizeInBytes: number, type: 'audio' | 'video'): void {
+    this.currentFileSize = sizeInBytes;
+    this.currentFileType = type;
+  }
+
   // Verifica se deve mostrar pop-up baseado no tamanho do arquivo
   private static shouldShowPopup(): boolean {
     const fileSizeMB = this.currentFileSize / (1024 * 1024);
@@ -121,6 +127,11 @@ export class MemoryManager {
   static checkMemoryUsage(): MemoryStats | null {
     const stats = this.getMemoryStats();
     if (!stats) return null;
+
+    // Em modo vídeo, evitamos qualquer limpeza ou pop-up para não interromper o streaming
+    if (this.currentFileType === 'video') {
+      return stats;
+    }
 
     // Ajusta thresholds baseado no tamanho do arquivo
     const fileSizeMB = this.currentFileSize / (1024 * 1024);
@@ -139,6 +150,10 @@ export class MemoryManager {
     }
 
     if (stats.memoryUsagePercentage > adjustedCleanupThreshold) {
+      // Sanity check adicional para evitar falsos positivos
+      if (stats.usedJSHeapSize < 300 * 1024 * 1024) { // <300MB
+        return stats;
+      }
       // Só mostra pop-up para arquivos grandes
       if (this.shouldShowPopup()) {
         ErrorHandler.logError(

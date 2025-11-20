@@ -2,6 +2,8 @@ import { useState, useMemo, memo, useCallback, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Track, PresetSettings } from '../types/audio';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useVideoPlayer } from '../hooks/useVideoPlayer';
+import { VideoPreview } from './VideoPreview';
 import { usePresets } from '../hooks/usePresets';
 import { useFileHandler } from '../hooks/useFileHandler';
 import { useSliderTouchLock } from '../hooks/useSliderTouchLock';
@@ -25,7 +27,10 @@ export const EditorPage = memo<{
   const onSeekPointerDown = useSliderTouchLock();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const player = useAudioPlayer(audioFile);
+  const isVideo = audioFile.type.startsWith('video/');
+  const audioPlayer = useAudioPlayer(audioFile);
+  const videoPlayer = useVideoPlayer(audioFile);
+  const player = (isVideo ? videoPlayer : audioPlayer);
   const { presets, savePreset, deletePreset } = usePresets();
 
   const handleDownload = useCallback(async () => {
@@ -83,7 +88,7 @@ export const EditorPage = memo<{
       <input
         ref={fileInputRef}
         type="file"
-        accept="audio/*"
+        accept="audio/*,video/*"
         className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0], onFileSelect)}
       />
@@ -103,12 +108,18 @@ export const EditorPage = memo<{
 
       <main className="space-y-10">
         <section className="flex flex-col items-center text-center">
-          <img 
-            src={track.coverUrl} 
-            alt="Album Cover" 
-            className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-lg mb-6 cursor-pointer transition-transform hover:scale-105"
-            onClick={() => fileInputRef.current?.click()}
-          />
+          {isVideo ? (
+            <div onClick={() => fileInputRef.current?.click()}>
+              <VideoPreview attach={videoPlayer!.attachVideoElement} />
+            </div>
+          ) : (
+            <img 
+              src={track.coverUrl} 
+              alt="Album Cover" 
+              className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-lg mb-6 cursor-pointer transition-transform hover:scale-105"
+              onClick={() => fileInputRef.current?.click()}
+            />
+          )}
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{track.name}</h2>
           <p className="text-md text-zinc-500 dark:text-zinc-400 mb-6">{track.artist}</p>
           
@@ -125,17 +136,19 @@ export const EditorPage = memo<{
               style={progressBarStyle}
             />
             <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 font-mono">
-              <span>{useMemo(() => formatTime(player.currentTime / player.speed), [player.currentTime, player.speed])}</span>
-              <span>{useMemo(() => formatTime(player.duration / player.speed), [player.duration, player.speed])}</span>
+              <span>{useMemo(() => formatTime(isVideo ? player.currentTime : player.currentTime / player.speed), [player.currentTime, player.speed, isVideo])}</span>
+              <span>{useMemo(() => formatTime(isVideo ? player.duration : player.duration / player.speed), [player.duration, player.speed, isVideo])}</span>
             </div>
           </div>
           
           <PlayerControls isPlaying={player.isPlaying} onTogglePlay={player.togglePlayPause} />
         </section>
 
-        <section>
-          <Waveform data={player.visualizerData} progress={player.progress} onSeek={player.seek} />
-        </section>
+        {!isVideo && (
+          <section>
+            <Waveform data={player.visualizerData} progress={player.progress} onSeek={player.seek} />
+          </section>
+        )}
 
         {presets.length > 0 && (
           <section className="text-center">

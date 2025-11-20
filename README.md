@@ -61,7 +61,7 @@
 #### 🛠️ Advanced Features
 - **Real-time Waveform Visualization**: Interactive spectrogram with playback position
 - **Preset System**: Save and load effect configurations
-- **High-Quality Export**: Download processed audio as WAV files
+- **High-Quality Export**: Download processed audio as WAV files or video as WebM. The download process for video now features real-time progress feedback and correctly includes all applied audio effects.
 - **Performance Optimized**: Web Workers for non-blocking UI and conditional audio graph updates
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 
@@ -210,7 +210,7 @@ The GitHub Actions workflow (`.github/workflows/deploy.yml`) will automatically 
 2. **Preview**: Visualize your audio with the interactive waveform
 3. **Apply Effects**: Adjust parameters in real-time with immediate audio feedback
 4. **Save Presets**: Store your favorite effect combinations
-5. **Download**: Export as high-quality WAV files with processing applied
+5. **Download**: Export as a high-quality WAV (for audio) or WebM (for video) file with all processing applied.
 
 ### Performance Tips
 - **Large Files**: For files >50MB, use lower quality settings during editing
