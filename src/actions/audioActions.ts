@@ -10,6 +10,7 @@ export const setReverb = (value: number) => ({ type: 'SET_REVERB', value } as co
 export const setReverbType = (value: 'default' | 'hall' | 'room' | 'plate') => ({ type: 'SET_REVERB_TYPE', value } as const);
 export const setVolume = (value: number) => ({ type: 'SET_VOLUME', value } as const);
 export const setBass = (value: number) => ({ type: 'SET_BASS', value } as const);
+export const setEtherealEcho = (value: boolean) => ({ type: 'SET_ETHEREAL_ECHO', value } as const);
 
 // 8D Audio actions
 export const setEightDEnabled = (value: boolean) => ({ type: 'SET_EIGHT_D_ENABLED', value } as const);
@@ -17,15 +18,12 @@ export const setEightDAutoRotate = (value: boolean) => ({ type: 'SET_EIGHT_D_AUT
 export const setEightDRotationSpeed = (value: number) => ({ type: 'SET_EIGHT_D_ROTATION_SPEED', value } as const);
 export const setEightDManualPosition = (value: number) => ({ type: 'SET_EIGHT_D_MANUAL_POSITION', value } as const);
 
-
-
 // Modulation effect actions
 export const setFlangerEnabled = (value: boolean) => ({ type: 'SET_FLANGER_ENABLED', value } as const);
 export const setFlangerRate = (value: number) => ({ type: 'SET_FLANGER_RATE', value } as const);
 export const setFlangerDepth = (value: number) => ({ type: 'SET_FLANGER_DEPTH', value } as const);
 export const setFlangerFeedback = (value: number) => ({ type: 'SET_FLANGER_FEEDBACK', value } as const);
 export const setFlangerDelay = (value: number) => ({ type: 'SET_FLANGER_DELAY', value } as const);
-
 
 export const setTremoloEnabled = (value: boolean) => ({ type: 'SET_TREMOLO_ENABLED', value } as const);
 export const setTremoloRate = (value: number) => ({ type: 'SET_TREMOLO_RATE', value } as const);
@@ -47,7 +45,6 @@ export const setBitcrusherEnabled = (value: boolean) => ({ type: 'SET_BITCRUSHER
 export const setBitcrusherBits = (value: number) => ({ type: 'SET_BITCRUSHER_BITS', value } as const);
 export const setBitcrusherSampleRate = (value: number) => ({ type: 'SET_BITCRUSHER_SAMPLE_RATE', value } as const);
 
-
 // Spatial audio actions
 export const setBinauralEnabled = (value: boolean) => ({ type: 'SET_BINAURAL_ENABLED', value } as const);
 export const setBinauralRoomSize = (value: number) => ({ type: 'SET_BINAURAL_ROOM_SIZE', value } as const);
@@ -59,7 +56,6 @@ export const setMuffleEnabled = (value: boolean) => ({ type: 'SET_MUFFLE_ENABLED
 export const setMuffleIntensity = (value: number) => ({ type: 'SET_MUFFLE_INTENSITY', value } as const);
 
 export const resetMuffledEffects = () => ({ type: 'RESET_MUFFLE_EFFECTS' } as const);
-
 
 // Reset actions
 export const resetModulationEffects = () => ({ type: 'RESET_MODULATION_EFFECTS' } as const);

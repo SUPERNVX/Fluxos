@@ -15,17 +15,18 @@ export const AudioEffects = memo(({
   player,
 }: { player: ReturnType<typeof useAudioPlayer> }) => {
   const { t } = useTranslation();
-  const hasAnyEffectActive = player.reverb > 0 || 
-                            player.volume !== 100 || 
-                            player.bass > 0 || 
-                            player.eightD.enabled || 
-                            player.spatialAudio.binaural.enabled || 
-                            player.spatialAudio.muffle.enabled || 
-                            player.modulation.flanger.enabled ||
-                            player.modulation.tremolo.enabled ||
-                            player.distortion.overdrive.enabled ||
-                            player.distortion.distortion.enabled ||
-                            player.distortion.bitcrusher.enabled;
+  const hasAnyEffectActive = player.reverb > 0 ||
+    player.volume !== 100 ||
+    player.bass > 0 ||
+    player.eightD.enabled ||
+    player.spatialAudio.binaural.enabled ||
+    player.spatialAudio.muffle.enabled ||
+    player.modulation.flanger.enabled ||
+    player.modulation.tremolo.enabled ||
+    player.distortion.overdrive.enabled ||
+    player.distortion.distortion.enabled ||
+    player.distortion.bitcrusher.enabled ||
+    player.etherealEcho;
 
   return (
     <section className="bg-light-bg-secondary dark:bg-dark-bg-secondary p-4 md:p-6 rounded-xl">
@@ -40,16 +41,16 @@ export const AudioEffects = memo(({
       <div className="space-y-2">
         <Slider label={t('audioEffects.speed')} value={player.speed} onChange={player.setSpeed}
           min={AUDIO_CONFIG.MIN_SPEED} max={AUDIO_CONFIG.MAX_SPEED} step={AUDIO_CONFIG.SPEED_STEP} unit="x" />
-        
-        <CollapsibleSection 
-          title={t('audioEffects.basicEffects')} 
-          activeIndicator={player.reverb > 0 || player.bass > 0}
+
+        <CollapsibleSection
+          title={t('audioEffects.basicEffects')}
+          activeIndicator={player.reverb > 0 || player.bass > 0 || player.etherealEcho}
           defaultOpen={true}
         >
           <div className="space-y-2 pt-2">
             <Slider label={t('audioEffects.reverb')} value={player.reverb} onChange={player.setReverb}
               min={0} max={100} step={5} unit="%" />
-            
+
             {/* Reverb Type Selector */}
             <div className="flex flex-wrap gap-2">
               <button
@@ -77,7 +78,18 @@ export const AudioEffects = memo(({
                 {t('audioEffects.reverbTypes.plate')}
               </button>
             </div>
-            
+
+            <div className="pt-2">
+              <ToggleSwitch
+                label={t('audioEffects.etherealEcho')}
+                checked={player.etherealEcho}
+                onChange={player.setEtherealEcho}
+              />
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-12">
+                {t('audioEffects.etherealEchoDescription')}
+              </p>
+            </div>
+
             <Slider label={t('audioEffects.volume')} value={player.volume} onChange={player.setVolume}
               min={0} max={200} step={1} unit="%" />
             <Slider label={t('audioEffects.bassBoost')} value={player.bass} onChange={player.setBass}
@@ -129,8 +141,8 @@ export const AudioEffects = memo(({
           />
         </CollapsibleSection>
 
-        <CollapsibleSection 
-          title={t('audioEffects.spatialAudio')} 
+        <CollapsibleSection
+          title={t('audioEffects.spatialAudio')}
           activeIndicator={player.eightD.enabled || player.spatialAudio.binaural.enabled || player.spatialAudio.muffle.enabled}
           defaultOpen={true}
         >
@@ -147,14 +159,14 @@ export const AudioEffects = memo(({
               setEightDRotationSpeed={player.setEightDRotationSpeed}
               setEightDManualPosition={player.setEightDManualPosition}
             />
-            
+
             <MuffledControls
               muffled={player.spatialAudio.muffle}
               setMuffledEnabled={player.setMuffleEnabled}
               setMuffledIntensity={player.setMuffleIntensity}
               resetMuffledEffects={player.resetMuffledEffects}
             />
-            
+
             <SpatialAudioControls
               spatialAudio={player.spatialAudio}
               setBinauralEnabled={player.setBinauralEnabled}

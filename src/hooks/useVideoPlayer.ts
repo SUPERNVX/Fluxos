@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState, useMemo } from 'react';
 import { audioReducer } from '../reducers/audioReducer';
+import * as audioActions from '../actions/audioActions';
 import { AUDIO_CONFIG, DEFAULT_DISTORTION, DEFAULT_MODULATION, DEFAULT_SPATIAL_AUDIO } from '../constants/audioConfig';
-import { createFlangerEffect, createTremoloEffect, createBitCrusher, createOverdriveEffect, createDistortionEffect, createMuffleEffect } from '../utils/effects';
-import { createImpulseResponse as makeImpulseResponse, createBinauralImpulseResponse as makeBinauralImpulseResponse } from '../utils/effects/reverb';
-import type { AudioNodes } from '../types/audio';
+import { AudioEngine } from '../core/AudioEngine';
 
 export const useVideoPlayer = (videoFile: File) => {
   const [state, dispatch] = useReducer(audioReducer, {
@@ -16,6 +15,7 @@ export const useVideoPlayer = (videoFile: File) => {
     reverbType: 'default' as 'default' | 'hall' | 'room' | 'plate',
     volume: AUDIO_CONFIG.DEFAULT_VOLUME,
     bass: AUDIO_CONFIG.DEFAULT_BASS,
+    etherealEcho: false,
     eightD: { enabled: false, autoRotate: true, rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED, manualPosition: 0 },
     modulation: { ...DEFAULT_MODULATION },
     distortion: { ...DEFAULT_DISTORTION },
@@ -26,12 +26,15 @@ export const useVideoPlayer = (videoFile: File) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const audioNodesRef = useRef<AudioNodes>({});
   const objectUrlRef = useRef<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  const createImpulseResponse = useCallback((context: AudioContext, type: 'default' | 'hall' | 'room' | 'plate') => makeImpulseResponse(context, type), []);
-  const createBinauralImpulseResponse = useCallback((context: AudioContext, roomSize: number, damping: number) => makeBinauralImpulseResponse(context, roomSize, damping), []);
+  // We don't strictly need videoElement state if we handle everything in callback, 
+  // but it can be useful for debugging or other effects. 
+  // For now, I'll remove it to simplify dependencies if not used.
+  // const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+
+  const audioEngineRef = useRef<AudioEngine | null>(null);
 
   useEffect(() => {
     if (!objectUrlRef.current) {
@@ -48,21 +51,54 @@ export const useVideoPlayer = (videoFile: File) => {
   const attachVideoElement = useCallback((el: HTMLVideoElement | null) => {
     videoElRef.current = el;
     if (!el) return;
+
+    // Video Setup
     el.src = videoUrl || '';
     el.preload = 'auto';
-    el.muted = true;
+    el.muted = true; // Mute video element to avoid double audio
+
     try {
-      // Disable pitch preservation to avoid phasey/chorus artifacts at slow speeds
-      (el as HTMLVideoElement & { preservesPitch?: boolean; webkitPreservesPitch?: boolean; mozPreservesPitch?: boolean }).preservesPitch = false;
-      (el as HTMLVideoElement & { preservesPitch?: boolean; webkitPreservesPitch?: boolean; mozPreservesPitch?: boolean }).webkitPreservesPitch = false;
-      (el as HTMLVideoElement & { preservesPitch?: boolean; webkitPreservesPitch?: boolean; mozPreservesPitch?: boolean }).mozPreservesPitch = false;
-    } catch (_ignore) { void _ignore; }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el as any).preservesPitch = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el as any).webkitPreservesPitch = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el as any).mozPreservesPitch = false;
+    } catch { /* ignore */ }
+
     el.onloadedmetadata = () => {
       dispatch({ type: 'SET_TIME', current: 0, progress: 0 });
       dispatch({ type: 'SET_DURATION', value: el.duration });
     };
-    // Não forçamos mudanças de volume do elemento de vídeo; o áudio processado é controlado pelo mainGain
-  }, [videoUrl]);
+
+    // Audio Engine Setup
+    if (!audioContextRef.current) {
+      type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
+      const w = window as WindowWithWebkitAudio;
+      audioContextRef.current = new (window.AudioContext || w.webkitAudioContext!)();
+    }
+
+    if (!audioEngineRef.current) {
+      // Initialize with default state, effect will update it
+      audioEngineRef.current = new AudioEngine(audioContextRef.current);
+    }
+
+    const ctx = audioContextRef.current;
+
+    if (!mediaSourceRef.current) {
+      mediaSourceRef.current = ctx.createMediaElementSource(el);
+      audioEngineRef.current.setSource(mediaSourceRef.current);
+    } else {
+      // If media source exists, we might need to reconnect if element changed?
+      // MediaElementSource is tied to the element. 
+      // If 'el' is new, we need new source?
+      // Usually ref callback is called with null then new el.
+      // If null, we should probably cleanup?
+      // But we can't easily destroy MediaElementSource.
+      // For now, assuming simple mounting.
+    }
+
+  }, [videoUrl]); // Only depend on videoUrl
 
   useEffect(() => {
     const v = videoElRef.current;
@@ -72,252 +108,20 @@ export const useVideoPlayer = (videoFile: File) => {
     }
   }, [videoUrl]);
 
-  const setupGraph = useCallback(() => {
-    if (!videoElRef.current) return;
-    if (!audioContextRef.current) {
-      type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
-      const w = window as WindowWithWebkitAudio;
-      audioContextRef.current = new (window.AudioContext || w.webkitAudioContext!)();
-    }
-    const ctx = audioContextRef.current!;
-
-    mediaSourceRef.current?.disconnect();
-    const source = mediaSourceRef.current || ctx.createMediaElementSource(videoElRef.current);
-    mediaSourceRef.current = source;
-
-    // Base nodes
-    const mainGain = ctx.createGain();
-    mainGain.gain.value = state.volume / 100;
-    const defaultConvolver = ctx.createConvolver();
-    defaultConvolver.buffer = createImpulseResponse(ctx, 'default');
-    const hallConvolver = ctx.createConvolver();
-    hallConvolver.buffer = createImpulseResponse(ctx, 'hall');
-    const roomConvolver = ctx.createConvolver();
-    roomConvolver.buffer = createImpulseResponse(ctx, 'room');
-    const plateConvolver = ctx.createConvolver();
-    plateConvolver.buffer = createImpulseResponse(ctx, 'plate');
-
-    const defaultReverbGain = ctx.createGain();
-    const hallReverbGain = ctx.createGain();
-    const roomReverbGain = ctx.createGain();
-    const plateReverbGain = ctx.createGain();
-    defaultReverbGain.gain.value = 0;
-    hallReverbGain.gain.value = 0;
-    roomReverbGain.gain.value = 0;
-    plateReverbGain.gain.value = 0;
-    const dryGain = ctx.createGain();
-    dryGain.gain.value = 1;
-
-    const bassBoost = ctx.createBiquadFilter();
-    bassBoost.type = 'lowshelf';
-    bassBoost.frequency.setValueAtTime(AUDIO_CONFIG.BASS_BOOST_FREQUENCY, 0);
-    bassBoost.gain.setValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, 0);
-
-    // connections
-    source.connect(dryGain);
-    source.connect(defaultReverbGain);
-    source.connect(hallReverbGain);
-    source.connect(roomReverbGain);
-    source.connect(plateReverbGain);
-    defaultReverbGain.connect(defaultConvolver);
-    hallReverbGain.connect(hallConvolver);
-    roomReverbGain.connect(roomConvolver);
-    plateReverbGain.connect(plateConvolver);
-    defaultConvolver.connect(mainGain);
-    hallConvolver.connect(mainGain);
-    roomConvolver.connect(mainGain);
-    plateConvolver.connect(mainGain);
-    dryGain.connect(mainGain);
-
-    let currentNode: AudioNode = mainGain;
-
-    if (state.modulation.flanger.enabled) {
-      const flanger = createFlangerEffect(ctx, state.modulation.flanger.rate, state.modulation.flanger.depth, state.modulation.flanger.feedback, state.modulation.flanger.delay);
-      currentNode.connect(flanger.input);
-      currentNode = flanger.output;
-      audioNodesRef.current.flanger = flanger;
-    }
-    if (state.modulation.tremolo.enabled) {
-      const tremolo = createTremoloEffect(ctx, state.modulation.tremolo.rate, state.modulation.tremolo.depth, state.modulation.tremolo.shape);
-      currentNode.connect(tremolo.input);
-      currentNode = tremolo.output;
-      audioNodesRef.current.tremolo = tremolo;
-    }
-
-    if (state.distortion.overdrive.enabled) {
-      const overdrive = createOverdriveEffect(ctx, state.distortion.overdrive.gain, state.distortion.overdrive.tone, state.distortion.overdrive.level);
-      currentNode.connect(overdrive.input);
-      currentNode = overdrive.output;
-      audioNodesRef.current.overdrive = overdrive;
-    }
-    if (state.distortion.distortion.enabled) {
-      const distortion = createDistortionEffect(ctx, state.distortion.distortion.amount, state.distortion.distortion.tone, state.distortion.distortion.level);
-      currentNode.connect(distortion.input);
-      currentNode = distortion.output;
-      audioNodesRef.current.distortion = distortion;
-    }
-    if (state.distortion.bitcrusher.enabled) {
-      const bitcrusher = createBitCrusher(ctx, state.distortion.bitcrusher.bits, state.distortion.bitcrusher.sampleRate);
-      currentNode.connect(bitcrusher.input);
-      currentNode = bitcrusher.output;
-      audioNodesRef.current.bitcrusher = bitcrusher;
-    }
-
-    if (state.spatialAudio.binaural.enabled) {
-      const binauralConvolver = ctx.createConvolver();
-      const binauralGain = ctx.createGain();
-      binauralConvolver.buffer = createBinauralImpulseResponse(ctx, state.spatialAudio.binaural.roomSize, state.spatialAudio.binaural.damping);
-      binauralGain.gain.setValueAtTime(state.spatialAudio.binaural.width / 100, ctx.currentTime);
-      currentNode.connect(binauralConvolver);
-      binauralConvolver.connect(binauralGain);
-      currentNode = binauralGain;
-      audioNodesRef.current.binauralProcessor = { convolver: binauralConvolver, gain: binauralGain };
-    }
-
-    const muffleInput = currentNode;
-    const muffleFilter = createMuffleEffect(ctx, state.spatialAudio.muffle.intensity);
-    const muffleWetGain = ctx.createGain();
-    const muffleDryGain = ctx.createGain();
-    const muffleMerger = ctx.createGain();
-    muffleWetGain.gain.value = state.spatialAudio.muffle.enabled ? 1 : 0;
-    muffleDryGain.gain.value = state.spatialAudio.muffle.enabled ? 0 : 1;
-    muffleInput.connect(muffleFilter);
-    muffleFilter.connect(muffleWetGain);
-    muffleWetGain.connect(muffleMerger);
-    muffleInput.connect(muffleDryGain);
-    muffleDryGain.connect(muffleMerger);
-    currentNode = muffleMerger;
-
-    const panner = ctx.createPanner();
-    const eightDWetGain = ctx.createGain();
-    const eightDDryGain = ctx.createGain();
-    const eightDMerger = ctx.createGain();
-    eightDWetGain.gain.value = state.eightD.enabled ? 1 : 0;
-    eightDDryGain.gain.value = state.eightD.enabled ? 0 : 1;
-    const eightDInput = currentNode;
-    eightDInput.connect(panner);
-    panner.connect(eightDWetGain);
-    eightDWetGain.connect(eightDMerger);
-    eightDInput.connect(eightDDryGain);
-    eightDDryGain.connect(eightDMerger);
-    currentNode = eightDMerger;
-
-    const bassWetGain = ctx.createGain();
-    const bassDryGain = ctx.createGain();
-    const bassMerger = ctx.createGain();
-    bassWetGain.gain.value = state.bass > 0 ? 1 : 0;
-    bassDryGain.gain.value = state.bass > 0 ? 0 : 1;
-    const bassInput = currentNode;
-    bassInput.connect(bassBoost);
-    bassBoost.connect(bassWetGain);
-    bassWetGain.connect(bassMerger);
-    bassInput.connect(bassDryGain);
-    bassDryGain.connect(bassMerger);
-    currentNode = bassMerger;
-
-    currentNode.connect(ctx.destination);
-
-    audioNodesRef.current = {
-      defaultConvolver, hallConvolver, roomConvolver, plateConvolver,
-      defaultReverbGain, hallReverbGain, roomReverbGain, plateReverbGain,
-      dryGain, mainGain, bassBoost,
-      muffle: muffleFilter, muffleWetGain, muffleDryGain,
-      eightDPanner: panner, eightDWetGain, eightDDryGain,
-      finalNode: currentNode, // Store the final node
-    };
-  }, [
-    createBinauralImpulseResponse,
-    createImpulseResponse,
-    state.bass,
-    state.distortion.bitcrusher.bits,
-    state.distortion.bitcrusher.enabled,
-    state.distortion.bitcrusher.sampleRate,
-    state.distortion.distortion.amount,
-    state.distortion.distortion.enabled,
-    state.distortion.distortion.level,
-    state.distortion.distortion.tone,
-    state.distortion.overdrive.enabled,
-    state.distortion.overdrive.gain,
-    state.distortion.overdrive.level,
-    state.distortion.overdrive.tone,
-    state.eightD.enabled,
-    state.modulation.flanger.delay,
-    state.modulation.flanger.depth,
-    state.modulation.flanger.enabled,
-    state.modulation.flanger.feedback,
-    state.modulation.flanger.rate,
-    state.modulation.tremolo.depth,
-    state.modulation.tremolo.enabled,
-    state.modulation.tremolo.rate,
-    state.modulation.tremolo.shape,
-    state.spatialAudio.binaural.damping,
-    state.spatialAudio.binaural.enabled,
-    state.spatialAudio.binaural.roomSize,
-    state.spatialAudio.binaural.width,
-    state.spatialAudio.muffle.enabled,
-    state.spatialAudio.muffle.intensity,
-    state.volume,
-  ]);
-
+  // Update Engine State
   useEffect(() => {
-    setupGraph();
-  }, [setupGraph]);
+    if (audioEngineRef.current) {
+      audioEngineRef.current.applyState(state);
+    }
+  }, [state]);
 
-  useEffect(() => {
-    const video = videoElRef.current;
-    const ctx = audioContextRef.current;
-    if (!video || !ctx) return;
-    const now = ctx.currentTime;
-    if (audioNodesRef.current.mainGain) {
-      audioNodesRef.current.mainGain.gain.linearRampToValueAtTime(state.volume / 100, now + 0.05);
-    }
-    if (audioNodesRef.current.defaultReverbGain && audioNodesRef.current.hallReverbGain && audioNodesRef.current.roomReverbGain && audioNodesRef.current.plateReverbGain) {
-      const reverbValue = state.reverb / 100;
-      audioNodesRef.current.defaultReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'default' ? reverbValue : 0, now + 0.05);
-      audioNodesRef.current.hallReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'hall' ? reverbValue : 0, now + 0.05);
-      audioNodesRef.current.roomReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'room' ? reverbValue : 0, now + 0.05);
-      audioNodesRef.current.plateReverbGain.gain.linearRampToValueAtTime(state.reverbType === 'plate' ? reverbValue : 0, now + 0.05);
-      audioNodesRef.current.dryGain?.gain.linearRampToValueAtTime(1 - reverbValue, now + 0.05);
-    }
-    if (audioNodesRef.current.bassBoost) {
-      audioNodesRef.current.bassBoost.gain.linearRampToValueAtTime(state.bass / 100 * AUDIO_CONFIG.BASS_BOOST_MAX_GAIN, now + 0.05);
-    }
-    if (audioNodesRef.current.muffle) {
-      const muffle = state.spatialAudio.muffle;
-      audioNodesRef.current.muffleWetGain?.gain.linearRampToValueAtTime(muffle.enabled ? 1 : 0, now + 0.05);
-      audioNodesRef.current.muffleDryGain?.gain.linearRampToValueAtTime(muffle.enabled ? 0 : 1, now + 0.05);
-      const maxFreq = 8000;
-      const minFreq = 400;
-      const frequency = maxFreq - (muffle.intensity / 100) * (maxFreq - minFreq);
-      audioNodesRef.current.muffle.frequency.linearRampToValueAtTime(frequency, now + 0.05);
-      audioNodesRef.current.muffle.Q.linearRampToValueAtTime(1.2, now + 0.05);
-    }
-    if (audioNodesRef.current.eightDPanner) {
-      const enabled = state.eightD.enabled;
-      audioNodesRef.current.eightDWetGain?.gain.linearRampToValueAtTime(enabled ? 1 : 0, now + 0.05);
-      audioNodesRef.current.eightDDryGain?.gain.linearRampToValueAtTime(enabled ? 0 : 1, now + 0.05);
-      const angleInRadians = (state.eightD.manualPosition * Math.PI) / 180;
-      audioNodesRef.current.eightDPanner.positionX.linearRampToValueAtTime(Math.sin(angleInRadians), now + 0.05);
-      audioNodesRef.current.eightDPanner.positionY.linearRampToValueAtTime(0, now + 0.05);
-      audioNodesRef.current.eightDPanner.positionZ.linearRampToValueAtTime(Math.cos(angleInRadians), now + 0.05);
-    }
-  }, [
-    state.volume,
-    state.reverb,
-    state.reverbType,
-    state.bass,
-    state.spatialAudio.muffle.enabled,
-    state.spatialAudio.muffle.intensity,
-    state.spatialAudio.binaural.width,
-    state.eightD.enabled,
-    state.eightD.manualPosition,
-  ]);
-
+  // Update Video Playback Rate
   useEffect(() => {
     const v = videoElRef.current;
     if (v) v.playbackRate = state.speed;
   }, [state.speed]);
 
+  // Sync Time
   useEffect(() => {
     let raf = 0;
     const lastUpdateRef = { t: 0, p: -1 };
@@ -343,6 +147,11 @@ export const useVideoPlayer = (videoFile: File) => {
   const togglePlayPause = useCallback(() => {
     const v = videoElRef.current;
     if (!v) return;
+
+    if (audioContextRef.current?.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+
     if (v.paused) {
       v.play().catch(() => undefined);
       dispatch({ type: 'SET_PLAYING', value: true });
@@ -363,15 +172,21 @@ export const useVideoPlayer = (videoFile: File) => {
   const download = useCallback(async (_name: string, onProgress?: (progress: number) => void) => {
     const videoElement = videoElRef.current;
     const audioContext = audioContextRef.current;
-    const finalAudioNode = audioNodesRef.current?.finalNode;
+    const engine = audioEngineRef.current;
 
-    if (!videoElement || !audioContext || !finalAudioNode) {
-      console.error("Download failed: video element, audio context, or final node not available.");
+    if (!videoElement || !audioContext || !engine) {
+      console.error("Download failed: missing dependencies");
       return false;
     }
-    
+
+    const finalAudioNode = engine.getNodes().finalNode;
+    if (!finalAudioNode) {
+      console.error("Download failed: final audio node not found");
+      return false;
+    }
+
     const wasPlaying = !videoElement.paused;
-    if(wasPlaying) videoElement.pause();
+    if (wasPlaying) videoElement.pause();
 
     const dest = audioContext.createMediaStreamDestination();
     let recordingPromise: Promise<Blob> | null = null;
@@ -379,9 +194,8 @@ export const useVideoPlayer = (videoFile: File) => {
     let monitorInterval: number | undefined;
 
     try {
-      finalAudioNode.disconnect();
       finalAudioNode.connect(dest);
-      
+
       type VideoWithCapture = HTMLVideoElement & {
         captureStream?: () => MediaStream;
         mozCaptureStream?: () => MediaStream;
@@ -391,20 +205,14 @@ export const useVideoPlayer = (videoFile: File) => {
       const videoStream = vCap.captureStream ? vCap.captureStream() : vCap.mozCaptureStream ? vCap.mozCaptureStream() : new MediaStream();
       const [videoTrack] = videoStream.getVideoTracks();
 
-      if (!videoTrack) {
-        console.error("Download failed: No video track found in the stream.");
-        throw new Error("No video track");
-      }
+      if (!videoTrack) throw new Error("No video track");
 
       const mixedStream = new MediaStream([videoTrack, ...dest.stream.getAudioTracks()]);
       const mimeCandidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
       const mimeType = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m));
 
-      if (!mimeType) {
-        console.error("Download failed: No supported MIME type for MediaRecorder found.");
-        throw new Error("No MIME type");
-      }
-      
+      if (!mimeType) throw new Error("No MIME type");
+
       recorder = new MediaRecorder(mixedStream, { mimeType });
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
@@ -418,7 +226,7 @@ export const useVideoPlayer = (videoFile: File) => {
       await videoElement.play();
       recorder.start();
       onProgress?.(0);
-      
+
       monitorInterval = window.setInterval(() => {
         const progress = (videoElement.currentTime / videoElement.duration) * 100;
         onProgress?.(Math.min(100, progress));
@@ -445,57 +253,55 @@ export const useVideoPlayer = (videoFile: File) => {
       if (recorder?.state === 'recording') recorder.stop();
       try {
         finalAudioNode.disconnect(dest);
-        finalAudioNode.connect(audioContext.destination);
-      } catch (e) {
-        console.warn("Error during cleanup, could not restore audio connection:", e);
-      }
+      } catch { /* ignore */ }
       if (wasPlaying && videoElement.paused) {
         videoElement.play().catch(console.warn);
       }
     }
   }, []);
 
-  const setEffectControls = {
-    setSpeed: (value: number) => dispatch({ type: 'SET_SPEED', value }),
-    setReverb: (value: number) => dispatch({ type: 'SET_REVERB', value }),
-    setReverbType: (value: 'default' | 'hall' | 'room' | 'plate') => dispatch({ type: 'SET_REVERB_TYPE', value }),
-    setVolume: (value: number) => dispatch({ type: 'SET_VOLUME', value }),
-    setBass: (value: number) => dispatch({ type: 'SET_BASS', value }),
-    setEightDEnabled: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_ENABLED', value }),
-    setEightDAutoRotate: (value: boolean) => dispatch({ type: 'SET_EIGHT_D_AUTO_ROTATE', value }),
-    setEightDRotationSpeed: (value: number) => dispatch({ type: 'SET_EIGHT_D_ROTATION_SPEED', value }),
-    setEightDManualPosition: (value: number) => dispatch({ type: 'SET_EIGHT_D_MANUAL_POSITION', value }),
-    setFlangerEnabled: (value: boolean) => dispatch({ type: 'SET_FLANGER_ENABLED', value }),
-    setFlangerRate: (value: number) => dispatch({ type: 'SET_FLANGER_RATE', value }),
-    setFlangerDepth: (value: number) => dispatch({ type: 'SET_FLANGER_DEPTH', value }),
-    setFlangerFeedback: (value: number) => dispatch({ type: 'SET_FLANGER_FEEDBACK', value }),
-    setFlangerDelay: (value: number) => dispatch({ type: 'SET_FLANGER_DELAY', value }),
-    setTremoloEnabled: (value: boolean) => dispatch({ type: 'SET_TREMOLO_ENABLED', value }),
-    setTremoloRate: (value: number) => dispatch({ type: 'SET_TREMOLO_RATE', value }),
-    setTremoloDepth: (value: number) => dispatch({ type: 'SET_TREMOLO_DEPTH', value }),
-    setTremoloShape: (value: 'sine' | 'square' | 'triangle' | 'sawtooth') => dispatch({ type: 'SET_TREMOLO_SHAPE', value }),
-    setOverdriveEnabled: (value: boolean) => dispatch({ type: 'SET_OVERDRIVE_ENABLED', value }),
-    setOverdriveGain: (value: number) => dispatch({ type: 'SET_OVERDRIVE_GAIN', value }),
-    setOverdriveTone: (value: number) => dispatch({ type: 'SET_OVERDRIVE_TONE', value }),
-    setOverdriveLevel: (value: number) => dispatch({ type: 'SET_OVERDRIVE_LEVEL', value }),
-    setDistortionEnabled: (value: boolean) => dispatch({ type: 'SET_DISTORTION_ENABLED', value }),
-    setDistortionAmount: (value: number) => dispatch({ type: 'SET_DISTORTION_AMOUNT', value }),
-    setDistortionTone: (value: number) => dispatch({ type: 'SET_DISTORTION_TONE', value }),
-    setDistortionLevel: (value: number) => dispatch({ type: 'SET_DISTORTION_LEVEL', value }),
-    setBitcrusherEnabled: (value: boolean) => dispatch({ type: 'SET_BITCRUSHER_ENABLED', value }),
-    setBitcrusherBits: (value: number) => dispatch({ type: 'SET_BITCRUSHER_BITS', value }),
-    setBitcrusherSampleRate: (value: number) => dispatch({ type: 'SET_BITCRUSHER_SAMPLE_RATE', value }),
-    setBinauralEnabled: (value: boolean) => dispatch({ type: 'SET_BINAURAL_ENABLED', value }),
-    setBinauralRoomSize: (value: number) => dispatch({ type: 'SET_BINAURAL_ROOM_SIZE', value }),
-    setBinauralDamping: (value: number) => dispatch({ type: 'SET_BINAURAL_DAMPING', value }),
-    setBinauralWidth: (value: number) => dispatch({ type: 'SET_BINAURAL_WIDTH', value }),
-    setMuffleEnabled: (value: boolean) => dispatch({ type: 'SET_MUFFLE_ENABLED', value }),
-    setMuffleIntensity: (value: number) => dispatch({ type: 'SET_MUFFLE_INTENSITY', value }),
-    resetMuffledEffects: () => dispatch({ type: 'RESET_MUFFLE_EFFECTS' }),
-    resetModulationEffects: () => dispatch({ type: 'RESET_MODULATION_EFFECTS' }),
-    resetDistortionEffects: () => dispatch({ type: 'RESET_DISTORTION_EFFECTS' }),
-    resetSpatialAudioEffects: () => dispatch({ type: 'RESET_SPATIAL_AUDIO_EFFECTS' }),
-  };
+  const setEffectControls = useMemo(() => ({
+    setSpeed: (value: number) => dispatch(audioActions.setSpeed(value)),
+    setReverb: (value: number) => dispatch(audioActions.setReverb(value)),
+    setReverbType: (value: 'default' | 'hall' | 'room' | 'plate') => dispatch(audioActions.setReverbType(value)),
+    setVolume: (value: number) => dispatch(audioActions.setVolume(value)),
+    setBass: (value: number) => dispatch(audioActions.setBass(value)),
+    setEtherealEcho: (value: boolean) => dispatch(audioActions.setEtherealEcho(value)),
+    setEightDEnabled: (value: boolean) => dispatch(audioActions.setEightDEnabled(value)),
+    setEightDAutoRotate: (value: boolean) => dispatch(audioActions.setEightDAutoRotate(value)),
+    setEightDRotationSpeed: (value: number) => dispatch(audioActions.setEightDRotationSpeed(value)),
+    setEightDManualPosition: (value: number) => dispatch(audioActions.setEightDManualPosition(value)),
+    setFlangerEnabled: (value: boolean) => dispatch(audioActions.setFlangerEnabled(value)),
+    setFlangerRate: (value: number) => dispatch(audioActions.setFlangerRate(value)),
+    setFlangerDepth: (value: number) => dispatch(audioActions.setFlangerDepth(value)),
+    setFlangerFeedback: (value: number) => dispatch(audioActions.setFlangerFeedback(value)),
+    setFlangerDelay: (value: number) => dispatch(audioActions.setFlangerDelay(value)),
+    setTremoloEnabled: (value: boolean) => dispatch(audioActions.setTremoloEnabled(value)),
+    setTremoloRate: (value: number) => dispatch(audioActions.setTremoloRate(value)),
+    setTremoloDepth: (value: number) => dispatch(audioActions.setTremoloDepth(value)),
+    setTremoloShape: (value: 'sine' | 'square' | 'triangle' | 'sawtooth') => dispatch(audioActions.setTremoloShape(value)),
+    setOverdriveEnabled: (value: boolean) => dispatch(audioActions.setOverdriveEnabled(value)),
+    setOverdriveGain: (value: number) => dispatch(audioActions.setOverdriveGain(value)),
+    setOverdriveTone: (value: number) => dispatch(audioActions.setOverdriveTone(value)),
+    setOverdriveLevel: (value: number) => dispatch(audioActions.setOverdriveLevel(value)),
+    setDistortionEnabled: (value: boolean) => dispatch(audioActions.setDistortionEnabled(value)),
+    setDistortionAmount: (value: number) => dispatch(audioActions.setDistortionAmount(value)),
+    setDistortionTone: (value: number) => dispatch(audioActions.setDistortionTone(value)),
+    setDistortionLevel: (value: number) => dispatch(audioActions.setDistortionLevel(value)),
+    setBitcrusherEnabled: (value: boolean) => dispatch(audioActions.setBitcrusherEnabled(value)),
+    setBitcrusherBits: (value: number) => dispatch(audioActions.setBitcrusherBits(value)),
+    setBitcrusherSampleRate: (value: number) => dispatch(audioActions.setBitcrusherSampleRate(value)),
+    setBinauralEnabled: (value: boolean) => dispatch(audioActions.setBinauralEnabled(value)),
+    setBinauralRoomSize: (value: number) => dispatch(audioActions.setBinauralRoomSize(value)),
+    setBinauralDamping: (value: number) => dispatch(audioActions.setBinauralDamping(value)),
+    setBinauralWidth: (value: number) => dispatch(audioActions.setBinauralWidth(value)),
+    setMuffleEnabled: (value: boolean) => dispatch(audioActions.setMuffleEnabled(value)),
+    setMuffleIntensity: (value: number) => dispatch(audioActions.setMuffleIntensity(value)),
+    resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
+    resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),
+    resetDistortionEffects: () => dispatch(audioActions.resetDistortionEffects()),
+    resetSpatialAudioEffects: () => dispatch(audioActions.resetSpatialAudioEffects()),
+  }), [dispatch]);
 
   return {
     // state
@@ -508,16 +314,20 @@ export const useVideoPlayer = (videoFile: File) => {
     reverbType: state.reverbType,
     volume: state.volume,
     bass: state.bass,
+    etherealEcho: state.etherealEcho,
     eightD: state.eightD,
     modulation: state.modulation,
     distortion: state.distortion,
     spatialAudio: state.spatialAudio,
     visualizerData,
-    // controls
+
+    // refs
+    attachVideoElement,
+
+    // actions
     togglePlayPause,
     seek,
     download,
-    attachVideoElement,
-    ...setEffectControls,
+    ...setEffectControls
   };
 };

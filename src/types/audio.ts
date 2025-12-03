@@ -16,6 +16,7 @@ export type AudioState = {
   reverbType: 'default' | 'hall' | 'room' | 'plate';
   volume: number;
   bass: number;
+  etherealEcho: boolean;
 
   eightD: {
     enabled: boolean;
@@ -174,7 +175,7 @@ export type AudioNodes = {
 
 };
 
-export type AudioAction = 
+export type AudioAction =
   | { type: 'SET_PLAYING'; value: boolean }
   | { type: 'SET_PROGRESS'; value: number }
   | { type: 'SET_TIME'; current: number; progress: number }
@@ -184,6 +185,7 @@ export type AudioAction =
   | { type: 'SET_REVERB_TYPE'; value: 'default' | 'hall' | 'room' | 'plate' }
   | { type: 'SET_VOLUME'; value: number }
   | { type: 'SET_BASS'; value: number }
+  | { type: 'SET_ETHEREAL_ECHO'; value: boolean }
 
   | { type: 'SET_EIGHT_D_ENABLED'; value: boolean }
   | { type: 'SET_EIGHT_D_AUTO_ROTATE'; value: boolean }

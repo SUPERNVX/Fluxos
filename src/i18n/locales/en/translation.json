@@ -81,7 +81,9 @@
       "hall": "Hall",
       "room": "Room",
       "plate": "Plate"
-    }
+    },
+    "etherealEcho": "Ethereal Echo",
+    "etherealEchoDescription": "Creates a dreamy, spacious atmosphere with multiple reverbs."
   },
   "player": {
     "upload": "Upload Audio File",
@@ -125,8 +127,7 @@
     "damping": "Controls the amount of high frequency damping.",
     "width": "Controls the stereo width of the effect.",
     "intensity": "Controls the strength of the muffle effect."
-  }
-  ,
+  },
   "errors": {
     "title": "Error",
     "codes": {

@@ -28,27 +28,29 @@ const updateEffect = (
 export const audioReducer = (state: AudioState, action: AudioAction): AudioState => {
   switch (action.type) {
     // Basic playback actions
-    case 'SET_PLAYING': 
+    case 'SET_PLAYING':
       return { ...state, isPlaying: action.value };
-    case 'SET_PROGRESS': 
+    case 'SET_PROGRESS':
       return { ...state, progress: action.value };
-    case 'SET_TIME': 
+    case 'SET_TIME':
       return { ...state, currentTime: action.current, progress: action.progress };
-    case 'SET_DURATION': 
+    case 'SET_DURATION':
       return { ...state, duration: action.value };
-    case 'SET_SPEED': 
+    case 'SET_SPEED':
       return { ...state, speed: action.value };
-    case 'SET_REVERB': 
+    case 'SET_REVERB':
       return { ...state, reverb: action.value };
-    case 'SET_REVERB_TYPE': 
+    case 'SET_REVERB_TYPE':
       return { ...state, reverbType: action.value };
-    case 'SET_VOLUME': 
+    case 'SET_VOLUME':
       return { ...state, volume: action.value };
-    case 'SET_BASS': 
+    case 'SET_BASS':
       return { ...state, bass: action.value };
+    case 'SET_ETHEREAL_ECHO':
+      return { ...state, etherealEcho: action.value };
 
-    // 8D Audio actions - Fixed to properly update simple properties
-    case 'SET_EIGHT_D_ENABLED': 
+    // 8D Audio actions
+    case 'SET_EIGHT_D_ENABLED':
       return {
         ...state,
         eightD: {
@@ -56,7 +58,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           enabled: action.value
         }
       };
-    case 'SET_EIGHT_D_AUTO_ROTATE': 
+    case 'SET_EIGHT_D_AUTO_ROTATE':
       return {
         ...state,
         eightD: {
@@ -64,7 +66,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           autoRotate: action.value
         }
       };
-    case 'SET_EIGHT_D_ROTATION_SPEED': 
+    case 'SET_EIGHT_D_ROTATION_SPEED':
       return {
         ...state,
         eightD: {
@@ -72,7 +74,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           rotationSpeed: action.value
         }
       };
-    case 'SET_EIGHT_D_MANUAL_POSITION': 
+    case 'SET_EIGHT_D_MANUAL_POSITION':
       return {
         ...state,
         eightD: {
@@ -80,7 +82,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           manualPosition: action.value
         }
       };
-    
+
     // Modulation Effects
     case 'SET_FLANGER_ENABLED':
       return updateEffect(state, 'modulation', 'flanger', { enabled: action.value });
@@ -92,8 +94,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'modulation', 'flanger', { feedback: action.value });
     case 'SET_FLANGER_DELAY':
       return updateEffect(state, 'modulation', 'flanger', { delay: action.value });
-      
-      
+
     case 'SET_TREMOLO_ENABLED':
       return updateEffect(state, 'modulation', 'tremolo', { enabled: action.value });
     case 'SET_TREMOLO_RATE':
@@ -102,7 +103,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'modulation', 'tremolo', { depth: action.value });
     case 'SET_TREMOLO_SHAPE':
       return updateEffect(state, 'modulation', 'tremolo', { shape: action.value });
-    
+
     // Distortion Effects
     case 'SET_OVERDRIVE_ENABLED':
       return updateEffect(state, 'distortion', 'overdrive', { enabled: action.value });
@@ -112,7 +113,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'distortion', 'overdrive', { tone: action.value });
     case 'SET_OVERDRIVE_LEVEL':
       return updateEffect(state, 'distortion', 'overdrive', { level: action.value });
-      
+
     case 'SET_DISTORTION_ENABLED':
       return updateEffect(state, 'distortion', 'distortion', { enabled: action.value });
     case 'SET_DISTORTION_AMOUNT':
@@ -121,18 +122,14 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
       return updateEffect(state, 'distortion', 'distortion', { tone: action.value });
     case 'SET_DISTORTION_LEVEL':
       return updateEffect(state, 'distortion', 'distortion', { level: action.value });
-      
+
     case 'SET_BITCRUSHER_ENABLED':
       return updateEffect(state, 'distortion', 'bitcrusher', { enabled: action.value });
     case 'SET_BITCRUSHER_BITS':
       return updateEffect(state, 'distortion', 'bitcrusher', { bits: action.value });
     case 'SET_BITCRUSHER_SAMPLE_RATE':
       return updateEffect(state, 'distortion', 'bitcrusher', { sampleRate: action.value });
-      
 
-      
-
-    
     // Spatial Audio
     case 'SET_BINAURAL_ENABLED':
       return updateEffect(state, 'spatialAudio', 'binaural', { enabled: action.value });
@@ -175,7 +172,6 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         },
       };
 
-    
     // Reset Actions
     case 'RESET_MODULATION_EFFECTS':
       return { ...state, modulation: { ...DEFAULT_MODULATION } };
@@ -184,18 +180,18 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
     case 'RESET_SPATIAL_AUDIO_EFFECTS':
       return { ...state, spatialAudio: { ...DEFAULT_SPATIAL_AUDIO } };
 
-    
     case 'RESET':
       return {
-        isPlaying: false, 
-        progress: 0, 
-        currentTime: 0, 
+        isPlaying: false,
+        progress: 0,
+        currentTime: 0,
         duration: 0,
-        speed: AUDIO_CONFIG.DEFAULT_SPEED, 
+        speed: AUDIO_CONFIG.DEFAULT_SPEED,
         reverb: AUDIO_CONFIG.DEFAULT_REVERB,
         reverbType: 'default',
         volume: AUDIO_CONFIG.DEFAULT_VOLUME,
         bass: AUDIO_CONFIG.DEFAULT_BASS,
+        etherealEcho: false,
         eightD: {
           enabled: false,
           autoRotate: true,
@@ -206,7 +202,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         distortion: { ...DEFAULT_DISTORTION },
         spatialAudio: { ...DEFAULT_SPATIAL_AUDIO },
       };
-      
+
     case 'NEW_TRACK_RESET':
       return {
         ...state,
@@ -215,7 +211,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
         currentTime: 0,
         duration: 0,
       };
-      
+
     default:
       return state;
   }

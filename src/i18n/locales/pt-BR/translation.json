@@ -81,7 +81,9 @@
       "hall": "Salão",
       "room": "Sala",
       "plate": "Placa"
-    }
+    },
+    "etherealEcho": "Ethereal Echo",
+    "etherealEchoDescription": "Cria uma atmosfera espacial e sonhadora com múltiplos reverbs."
   },
   "player": {
     "upload": "Enviar Arquivo de Áudio",
@@ -125,7 +127,24 @@
     "damping": "Controla a quantidade de amortecimento de alta frequência.",
     "width": "Controla a largura estéreo do efeito.",
     "intensity": "Controla a força do efeito de muffle."
+  },
+  "errors": {
+    "title": "Erro",
+    "codes": {
+      "FILE_UPLOAD_FAILED": "Falha ao enviar o arquivo. Tente novamente.",
+      "FILE_TOO_LARGE": "Arquivo muito grande. Tamanho máximo: 100MB.",
+      "INVALID_FILE_FORMAT": "Formato de arquivo não suportado. Use MP3, WAV, OGG ou M4A.",
+      "FILE_CORRUPTED": "Arquivo corrompido ou inválido.",
+      "AUDIO_CONTEXT_FAILED": "Erro ao inicializar o sistema de áudio.",
+      "AUDIO_DECODE_FAILED": "Erro ao decodificar o arquivo de áudio.",
+      "EFFECT_CREATION_FAILED": "Erro ao criar efeito de áudio.",
+      "WORKLET_LOAD_FAILED": "Erro ao carregar processador de áudio.",
+      "DOWNLOAD_FAILED": "Erro ao baixar arquivo processado.",
+      "RENDER_FAILED": "Erro ao renderizar áudio para download.",
+      "OUT_OF_MEMORY": "Memória insuficiente. Tente um arquivo menor.",
+      "BUFFER_ALLOCATION_FAILED": "Erro de alocação de memória.",
+      "NETWORK_ERROR": "Erro de conexão. Verifique sua internet.",
+      "TIMEOUT_ERROR": "A operação expirou. Tente novamente."
+    }
   }
-  ,
-  "errors": { "title": "Erro" }
 }
