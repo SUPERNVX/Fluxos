@@ -38,8 +38,6 @@ export const useAudioLogic = () => {
             // Increment angle based on rotation speed
             // 360 degrees * rotationSpeed factor * time delta
             // Default rotationSpeed is 0.2
-            if (document.hidden) return; // Save resources/CPU in background to prevent audio stutter
-
             eightDAngleRef.current = (eightDAngleRef.current + (state.eightD.rotationSpeed * 360 * 0.05)) % 360;
             dispatch(audioActions.setEightDManualPosition(eightDAngleRef.current));
         }, 50);

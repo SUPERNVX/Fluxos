@@ -175,7 +175,9 @@ export const useAudioPlayer = (audioFile: File | null) => {
     } else if (!audioContextRef.current) {
       type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
       const w = window as WindowWithWebkitAudio;
-      audioContextRef.current = new (window.AudioContext || w.webkitAudioContext!)();
+      // Use 'playback' latencyHint for smoother audio, especially in background/mobile
+      const AudioCtx = window.AudioContext || w.webkitAudioContext!;
+      audioContextRef.current = new AudioCtx({ latencyHint: 'playback' });
     }
 
     // Initialize Engine

@@ -59,7 +59,8 @@ export const useVideoPlayer = (videoFile: File) => {
     if (!audioContextRef.current) {
       type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
       const w = window as WindowWithWebkitAudio;
-      audioContextRef.current = new (window.AudioContext || w.webkitAudioContext!)();
+      const AudioCtx = window.AudioContext || w.webkitAudioContext!;
+      audioContextRef.current = new AudioCtx({ latencyHint: 'playback' });
     }
 
     if (!audioEngineRef.current) {

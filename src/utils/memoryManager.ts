@@ -303,9 +303,22 @@ export class MemoryManager {
 
   // Inicia monitoramento automático (menos frequente para reduzir overhead)
   static startAutoMonitoring(intervalMs: number = 60000): void { // 1 minuto em vez de 30s
+    // Check visibility API availability
+    if (typeof document !== 'undefined') {
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          // Pause monitoring loop if it exists (not implemented here as interval is running blindly, 
+          // but the check below inside interval handles it.
+          // However, reducing the interval frequency or stopping it might be better. 
+          // For now, the internal check is sufficient as it skips execution.)
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
     setInterval(() => {
       // Don't run cleanup if tab is in background to prevent audio stuttering
-      if (document.hidden) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
 
       // Só executa limpeza automática se não estiver processando algo importante
       if (this.resources.size > 5) { // Só monitora se há recursos significativos
