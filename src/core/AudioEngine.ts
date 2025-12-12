@@ -43,11 +43,13 @@ export class AudioEngine {
       volume: AUDIO_CONFIG.DEFAULT_VOLUME,
       bass: AUDIO_CONFIG.DEFAULT_BASS,
       etherealEcho: false,
+
       eightD: {
         enabled: false,
         autoRotate: true,
         rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED,
         manualPosition: 0,
+        pattern: 'circle',
       },
       modulation: { ...DEFAULT_MODULATION },
       distortion: { ...DEFAULT_DISTORTION },
@@ -455,15 +457,42 @@ export class AudioEngine {
     }
 
     // 8D
+    // 8D
     if (this.nodes.eightDPanner && this.nodes.eightDWetGain && this.nodes.eightDDryGain) {
-      const { enabled, manualPosition } = state.eightD;
+      const { enabled, manualPosition, pattern } = state.eightD;
       this.nodes.eightDWetGain.gain.linearRampToValueAtTime(enabled ? 1 : 0, now + rampTime);
       this.nodes.eightDDryGain.gain.linearRampToValueAtTime(enabled ? 0 : 1, now + rampTime);
+
       if (enabled) {
         const angleInRadians = (manualPosition * Math.PI) / 180;
-        this.nodes.eightDPanner.positionX.linearRampToValueAtTime(Math.sin(angleInRadians), now + rampTime);
-        this.nodes.eightDPanner.positionY.linearRampToValueAtTime(0, now + rampTime);
-        this.nodes.eightDPanner.positionZ.linearRampToValueAtTime(Math.cos(angleInRadians), now + rampTime);
+        let x = Math.sin(angleInRadians);
+        let z = Math.cos(angleInRadians);
+        const y = 0;
+
+        switch (pattern) {
+          case 'pingpong':
+            // PingPong: Move left-right (X axis).
+            z = 0.5; // Stay slightly in front
+            break;
+          case 'figure8':
+            // Figure 8: Lemniscate
+            x = Math.sin(angleInRadians);
+            z = Math.sin(2 * angleInRadians) * 0.5;
+            break;
+          case 'random':
+            // Lissajous for pseudo-random smooth movement
+            x = Math.sin(angleInRadians);
+            z = Math.cos(angleInRadians * 0.7);
+            break;
+          case 'circle':
+          default:
+            // Standard circle
+            break;
+        }
+
+        this.nodes.eightDPanner.positionX.linearRampToValueAtTime(x, now + rampTime);
+        this.nodes.eightDPanner.positionY.linearRampToValueAtTime(y, now + rampTime);
+        this.nodes.eightDPanner.positionZ.linearRampToValueAtTime(z, now + rampTime);
       }
     }
   }

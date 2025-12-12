@@ -65,6 +65,13 @@
       "bits": "Bits",
       "sampleRate": "Taxa de Amostragem"
     },
+    "eightDPatterns": {
+      "title": "Padrão de Movimento",
+      "circle": "Círculo",
+      "pingpong": "Ping Pong",
+      "figure8": "Figura 8 (Infinito)",
+      "random": "Aleatório"
+    },
     "binaural": {
       "title": "Binaural",
       "roomSize": "Tamanho do Ambiente",

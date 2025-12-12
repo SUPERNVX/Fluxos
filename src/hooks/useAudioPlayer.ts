@@ -1,38 +1,12 @@
-import { useState, useEffect, useCallback, useRef, useReducer, useMemo } from 'react';
-import {
-  AUDIO_CONFIG,
-  DEFAULT_MODULATION,
-  DEFAULT_DISTORTION,
-  DEFAULT_SPATIAL_AUDIO
-} from '../constants/audioConfig';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { AUDIO_CONFIG } from '../constants/audioConfig';
 import { ErrorHandler, ERROR_CODES } from '../utils/errorHandler';
 import { MemoryManager } from '../utils/memoryManager';
-import { audioReducer } from '../reducers/audioReducer';
-import * as audioActions from '../actions/audioActions';
+import { useAudioLogic } from './useAudioLogic';
 import { AudioEngine } from '../core/AudioEngine';
 
 export const useAudioPlayer = (audioFile: File | null) => {
-  const [state, dispatch] = useReducer(audioReducer, {
-    isPlaying: false,
-    progress: 0,
-    currentTime: 0,
-    duration: 0,
-    speed: AUDIO_CONFIG.DEFAULT_SPEED,
-    reverb: AUDIO_CONFIG.DEFAULT_REVERB,
-    reverbType: 'default',
-    volume: AUDIO_CONFIG.DEFAULT_VOLUME,
-    bass: AUDIO_CONFIG.DEFAULT_BASS,
-    etherealEcho: false,
-    eightD: {
-      enabled: false,
-      autoRotate: true,
-      rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED,
-      manualPosition: 0,
-    },
-    modulation: { ...DEFAULT_MODULATION },
-    distortion: { ...DEFAULT_DISTORTION },
-    spatialAudio: { ...DEFAULT_SPATIAL_AUDIO, muffle: { enabled: false, intensity: 0 } },
-  });
+  const { state, dispatch, actions } = useAudioLogic();
 
   const [visualizerData, setVisualizerData] = useState<number[]>(() =>
     Array(AUDIO_CONFIG.WAVEFORM_SAMPLES).fill(0.05)
@@ -45,7 +19,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
   const sourceStartedRef = useRef<boolean>(false);
   const timeRef = useRef({ start: 0, pause: 0 });
   const animationFrameRef = useRef<number>(0);
-  const eightDAngleRef = useRef(0);
 
   const generateWaveform = useCallback((buffer: AudioBuffer) => {
     const channelData = buffer.getChannelData(0);
@@ -120,7 +93,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     timeRef.current.pause = cappedOffset;
 
     dispatch({ type: 'SET_PLAYING', value: true });
-  }, [state.speed]);
+  }, [state.speed, dispatch]);
 
   const pause = useCallback(() => {
     if (!sourceNodeRef.current || !audioContextRef.current || !sourceStartedRef.current) return;
@@ -135,7 +108,7 @@ export const useAudioPlayer = (audioFile: File | null) => {
     sourceStartedRef.current = false;
 
     dispatch({ type: 'SET_PLAYING', value: false });
-  }, [state.speed]);
+  }, [state.speed, dispatch]);
 
   const togglePlayPause = useCallback(() => {
     if (audioContextRef.current?.state === 'suspended') {
@@ -270,17 +243,8 @@ export const useAudioPlayer = (audioFile: File | null) => {
     }
   }, [state.speed]);
 
-  // Update 8D position (auto rotação)
-  useEffect(() => {
-    if (!state.eightD.enabled || !state.eightD.autoRotate || !state.isPlaying) return;
+  // 8D rotation logic moved to useAudioLogic
 
-    const intervalId = setInterval(() => {
-      eightDAngleRef.current = (eightDAngleRef.current + (state.eightD.rotationSpeed * 360 * 0.05)) % 360;
-      dispatch({ type: 'SET_EIGHT_D_MANUAL_POSITION', value: eightDAngleRef.current });
-    }, 50);
-
-    return () => clearInterval(intervalId);
-  }, [state.eightD.enabled, state.eightD.autoRotate, state.eightD.rotationSpeed, state.isPlaying]);
 
   // Update UI during playback
   useEffect(() => {
@@ -321,49 +285,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     };
   }, [state.isPlaying, state.speed, play]);
 
-  // Grouped setters
-  const setEffectControls = useMemo(() => ({
-    setSpeed: (value: number) => dispatch(audioActions.setSpeed(value)),
-    setReverb: (value: number) => dispatch(audioActions.setReverb(value)),
-    setReverbType: (value: 'default' | 'hall' | 'room' | 'plate') => dispatch(audioActions.setReverbType(value)),
-    setVolume: (value: number) => dispatch(audioActions.setVolume(value)),
-    setBass: (value: number) => dispatch(audioActions.setBass(value)),
-    setEtherealEcho: (value: boolean) => dispatch(audioActions.setEtherealEcho(value)),
-    setEightDEnabled: (value: boolean) => dispatch(audioActions.setEightDEnabled(value)),
-    setEightDAutoRotate: (value: boolean) => dispatch(audioActions.setEightDAutoRotate(value)),
-    setEightDRotationSpeed: (value: number) => dispatch(audioActions.setEightDRotationSpeed(value)),
-    setEightDManualPosition: (value: number) => dispatch(audioActions.setEightDManualPosition(value)),
-    setFlangerEnabled: (value: boolean) => dispatch(audioActions.setFlangerEnabled(value)),
-    setFlangerRate: (value: number) => dispatch(audioActions.setFlangerRate(value)),
-    setFlangerDepth: (value: number) => dispatch(audioActions.setFlangerDepth(value)),
-    setFlangerFeedback: (value: number) => dispatch(audioActions.setFlangerFeedback(value)),
-    setFlangerDelay: (value: number) => dispatch(audioActions.setFlangerDelay(value)),
-    setTremoloEnabled: (value: boolean) => dispatch(audioActions.setTremoloEnabled(value)),
-    setTremoloRate: (value: number) => dispatch(audioActions.setTremoloRate(value)),
-    setTremoloDepth: (value: number) => dispatch(audioActions.setTremoloDepth(value)),
-    setTremoloShape: (value: 'sine' | 'square' | 'triangle' | 'sawtooth') => dispatch(audioActions.setTremoloShape(value)),
-    setOverdriveEnabled: (value: boolean) => dispatch(audioActions.setOverdriveEnabled(value)),
-    setOverdriveGain: (value: number) => dispatch(audioActions.setOverdriveGain(value)),
-    setOverdriveTone: (value: number) => dispatch(audioActions.setOverdriveTone(value)),
-    setOverdriveLevel: (value: number) => dispatch(audioActions.setOverdriveLevel(value)),
-    setDistortionEnabled: (value: boolean) => dispatch(audioActions.setDistortionEnabled(value)),
-    setDistortionAmount: (value: number) => dispatch(audioActions.setDistortionAmount(value)),
-    setDistortionTone: (value: number) => dispatch(audioActions.setDistortionTone(value)),
-    setDistortionLevel: (value: number) => dispatch(audioActions.setDistortionLevel(value)),
-    setBitcrusherEnabled: (value: boolean) => dispatch(audioActions.setBitcrusherEnabled(value)),
-    setBitcrusherBits: (value: number) => dispatch(audioActions.setBitcrusherBits(value)),
-    setBitcrusherSampleRate: (value: number) => dispatch(audioActions.setBitcrusherSampleRate(value)),
-    setBinauralEnabled: (value: boolean) => dispatch(audioActions.setBinauralEnabled(value)),
-    setBinauralRoomSize: (value: number) => dispatch(audioActions.setBinauralRoomSize(value)),
-    setBinauralDamping: (value: number) => dispatch(audioActions.setBinauralDamping(value)),
-    setBinauralWidth: (value: number) => dispatch(audioActions.setBinauralWidth(value)),
-    setMuffleEnabled: (value: boolean) => dispatch(audioActions.setMuffleEnabled(value)),
-    setMuffleIntensity: (value: number) => dispatch(audioActions.setMuffleIntensity(value)),
-    resetMuffledEffects: () => dispatch(audioActions.resetMuffledEffects()),
-    resetModulationEffects: () => dispatch(audioActions.resetModulationEffects()),
-    resetDistortionEffects: () => dispatch(audioActions.resetDistortionEffects()),
-    resetSpatialAudioEffects: () => dispatch(audioActions.resetSpatialAudioEffects()),
-  }), [dispatch]);
 
   return {
     ...state,
@@ -371,6 +292,6 @@ export const useAudioPlayer = (audioFile: File | null) => {
     togglePlayPause,
     seek,
     download,
-    ...setEffectControls
+    ...actions
   };
 };

@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.5.0] - 2025-12-10
+
+### Added
+
+- **Advanced 8D Audio Patterns**: Introduced selectable movement patterns for 8D Audio:
+  - **Circle**: Classic circular rotation (default).
+  - **Ping Pong**: Left-to-right oscillating movement.
+  - **Figure 8**: Complex infinity loop path.
+  - **Random**: Smooth, non-repeating random movement.
+- **UI Enhancements**: Added dedicated controls for 8D pattern selection.
+
+### Changed
+
+- **Audio Logic Centralization**: created `useAudioLogic` hook to centralize state management and animation loops, ensuring consistent behavior across both Audio and Video players.
+- **8D Audio for Video**: Fixed the issue where 8D audio effects (auto-rotation) were not functioning correctly during video playback.
+- **Performance**: Optimized React render cycles by correcting dependency arrays in audio hooks.
+
+### Removed
+
+- **Lo-Fi Mode**: Removed the experimental Lo-Fi effect as requested.
+
 All notable changes to this project will be documented in this file.
 
 ## [3.4.0] - 2025-11-18

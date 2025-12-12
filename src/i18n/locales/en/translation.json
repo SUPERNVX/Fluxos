@@ -68,13 +68,19 @@
     "binaural": {
       "title": "Binaural",
       "roomSize": "Room Size",
-      "damping": "Damping",
       "width": "Width"
     },
     "muffle": {
       "title": "Muffle",
       "sectionTitle": "Muffled Effect",
       "intensity": "Intensity"
+    },
+    "eightDPatterns": {
+      "title": "Movement Pattern",
+      "circle": "Circle",
+      "pingpong": "Ping Pong",
+      "figure8": "Figure 8",
+      "random": "Random"
     },
     "reverbTypes": {
       "default": "Default",

@@ -4,6 +4,9 @@ export type Track = {
   coverUrl: string;
 };
 
+
+export type EightDPattern = 'circle' | 'pingpong' | 'figure8' | 'random';
+
 export type PresetSettings = Pick<AudioState, 'speed' | 'reverb' | 'volume' | 'bass' | 'eightD' | 'spatialAudio'>;
 
 export type AudioState = {
@@ -23,7 +26,11 @@ export type AudioState = {
     autoRotate: boolean;
     rotationSpeed: number;
     manualPosition: number; // 0-360 graus
+    pattern: EightDPattern;
   };
+
+
+
   // Efeitos de Modulação
   modulation: {
     flanger: {
@@ -191,6 +198,8 @@ export type AudioAction =
   | { type: 'SET_EIGHT_D_AUTO_ROTATE'; value: boolean }
   | { type: 'SET_EIGHT_D_ROTATION_SPEED'; value: number }
   | { type: 'SET_EIGHT_D_MANUAL_POSITION'; value: number }
+  | { type: 'SET_EIGHT_D_PATTERN'; value: EightDPattern }
+  | { type: 'SET_EIGHT_D_PATTERN'; value: EightDPattern }
   // Modulation Effects Actions
   | { type: 'SET_FLANGER_ENABLED'; value: boolean }
   | { type: 'SET_FLANGER_RATE'; value: number }

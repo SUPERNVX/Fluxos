@@ -49,7 +49,7 @@
 - **Bitcrusher**: Digital lo-fi effect with bit depth (1-16) and sample rate (1K-44K Hz) control
 
 #### 🎧 Spatial Audio
-- **8D Audio**: Automatic rotation (0.1-2x speed) or manual positioning (0-360°)
+- **8D Audio**: Automatic rotation (0.1-2x speed) or manual positioning (0-360°) with multiple patterns (Circle, Ping Pong, Figure 8, Random)
 - **Binaural Processing**: Advanced spatial positioning with room size, damping, and width controls
 - **Muffled Effect**: Frequency-based dampening with intensity control (0-100%)
 

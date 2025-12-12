@@ -82,6 +82,14 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           manualPosition: action.value
         }
       };
+    case 'SET_EIGHT_D_PATTERN':
+      return {
+        ...state,
+        eightD: {
+          ...state.eightD,
+          pattern: action.value
+        }
+      };
 
     // Modulation Effects
     case 'SET_FLANGER_ENABLED':
@@ -197,6 +205,7 @@ export const audioReducer = (state: AudioState, action: AudioAction): AudioState
           autoRotate: true,
           rotationSpeed: AUDIO_CONFIG.EIGHT_D_ROTATION_SPEED,
           manualPosition: 0,
+          pattern: 'circle',
         },
         modulation: { ...DEFAULT_MODULATION },
         distortion: { ...DEFAULT_DISTORTION },

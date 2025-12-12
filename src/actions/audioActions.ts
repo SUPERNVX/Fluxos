@@ -17,6 +17,7 @@ export const setEightDEnabled = (value: boolean) => ({ type: 'SET_EIGHT_D_ENABLE
 export const setEightDAutoRotate = (value: boolean) => ({ type: 'SET_EIGHT_D_AUTO_ROTATE', value } as const);
 export const setEightDRotationSpeed = (value: number) => ({ type: 'SET_EIGHT_D_ROTATION_SPEED', value } as const);
 export const setEightDManualPosition = (value: number) => ({ type: 'SET_EIGHT_D_MANUAL_POSITION', value } as const);
+export const setEightDPattern = (value: import('../types/audio').EightDPattern) => ({ type: 'SET_EIGHT_D_PATTERN', value } as const);
 
 // Modulation effect actions
 export const setFlangerEnabled = (value: boolean) => ({ type: 'SET_FLANGER_ENABLED', value } as const);

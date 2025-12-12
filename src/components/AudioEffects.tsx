@@ -158,6 +158,7 @@ export const AudioEffects = memo(({
               setEightDAutoRotate={player.setEightDAutoRotate}
               setEightDRotationSpeed={player.setEightDRotationSpeed}
               setEightDManualPosition={player.setEightDManualPosition}
+              setEightDPattern={player.setEightDPattern}
             />
 
             <MuffledControls

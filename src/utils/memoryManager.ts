@@ -26,13 +26,13 @@ export class MemoryManager {
 
   // Registra um recurso para gerenciamento
   static registerResource(
-    id: string, 
-    type: ManagedResource['type'], 
-    data: unknown, 
+    id: string,
+    type: ManagedResource['type'],
+    data: unknown,
     size?: number
   ): string {
     const resourceSize = size || this.estimateSize(data, type);
-    
+
     const resource: ManagedResource = {
       id,
       type,
@@ -42,10 +42,10 @@ export class MemoryManager {
     };
 
     this.resources.set(id, resource);
-    
+
     // Verifica se precisa fazer limpeza
     this.checkMemoryUsage();
-    
+
     return id;
   }
 
@@ -57,7 +57,7 @@ export class MemoryManager {
     // Limpeza específica por tipo
     this.cleanupResourceData(resource);
     this.resources.delete(id);
-    
+
     return true;
   }
 
@@ -162,7 +162,7 @@ export class MemoryManager {
           `Uso: ${stats.memoryUsagePercentage.toFixed(1)}% | Arquivo: ${fileSizeMB.toFixed(1)}MB`
         );
       }
-      
+
       const cleaned = this.performEmergencyCleanup();
       if (process.env.NODE_ENV === 'development') {
         console.log(`Limpeza de emergência: ${cleaned} recursos removidos (arquivo: ${fileSizeMB.toFixed(1)}MB)`);
@@ -210,13 +210,13 @@ export class MemoryManager {
           }
         }
         return 0;
-        
+
       case 'blob':
         {
           const b = data as { size?: number };
           return typeof b.size === 'number' ? b.size : 0;
         }
-        
+
       case 'canvas':
         {
           const c = data as { width?: number; height?: number };
@@ -225,13 +225,13 @@ export class MemoryManager {
           }
         }
         return 0;
-        
+
       case 'imageData':
         {
           const id = data as { data?: { length: number } };
           return id.data ? id.data.length : 0;
         }
-        
+
       default:
         return JSON.stringify(data).length * 2; // Estimativa UTF-16
     }
@@ -246,7 +246,7 @@ export class MemoryManager {
             URL.revokeObjectURL(resource.data);
           }
           break;
-          
+
         case 'canvas':
           {
             const c = resource.data as { getContext?: (contextId: string) => CanvasRenderingContext2D | null; width?: number; height?: number };
@@ -260,11 +260,11 @@ export class MemoryManager {
             }
           }
           break;
-          
+
         case 'audioBuffer':
           // AudioBuffer não pode ser limpo diretamente, apenas removemos a referência
           break;
-          
+
         case 'blob':
           // Blob será coletado pelo GC automaticamente
           break;
@@ -285,11 +285,11 @@ export class MemoryManager {
 
     this.resources.forEach(resource => {
       totalSize += resource.size;
-      
+
       if (!byType[resource.type]) {
         byType[resource.type] = { count: 0, size: 0 };
       }
-      
+
       byType[resource.type].count++;
       byType[resource.type].size += resource.size;
     });
@@ -304,6 +304,9 @@ export class MemoryManager {
   // Inicia monitoramento automático (menos frequente para reduzir overhead)
   static startAutoMonitoring(intervalMs: number = 60000): void { // 1 minuto em vez de 30s
     setInterval(() => {
+      // Don't run cleanup if tab is in background to prevent audio stuttering
+      if (document.hidden) return;
+
       // Só executa limpeza automática se não estiver processando algo importante
       if (this.resources.size > 5) { // Só monitora se há recursos significativos
         this.performAutoCleanup(); // Só limpeza automática, não checkMemoryUsage completo
@@ -315,7 +318,7 @@ export class MemoryManager {
   static forceCleanupAll(): void {
     const allIds = Array.from(this.resources.keys());
     allIds.forEach(id => this.releaseResource(id));
-    
+
     // Force garbage collection se disponível
     if ('gc' in window && typeof window.gc === 'function') {
       window.gc();
